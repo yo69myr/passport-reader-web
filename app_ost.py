@@ -78,7 +78,7 @@ def login():
             "status": "success",
             "login": user[0],
             "subscription_active": user[2],
-            "created_at": user[3],  # Змінено з user[4] на user[3]
+            "created_at": user[3],
             "is_admin": is_admin
         })
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
@@ -88,24 +88,15 @@ def auth():
     data = request.get_json()
     login = data.get("login")
     password = data.get("password")
-    device_id = data.get("device_id")
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT password_hash, subscription_active, device_id FROM users WHERE login = %s", (login,))
+    cursor.execute("SELECT password_hash, subscription_active FROM users WHERE login = %s", (login,))
     user = cursor.fetchone()
     conn.close()
 
     if user and check_password_hash(user[0], password):
         if user[1]:
-            if user[2] is None:
-                conn = get_db()
-                cursor = conn.cursor()
-                cursor.execute("UPDATE users SET device_id = %s WHERE login = %s", (device_id, login))
-                conn.commit()
-                conn.close()
-            elif user[2] != device_id:
-                return jsonify({"status": "error", "message": "Логін прив’язано до іншого пристрою"})
             return jsonify({"status": "success", "subscription_active": True})
         return jsonify({"status": "error", "message": "Підписка неактивна"})
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
