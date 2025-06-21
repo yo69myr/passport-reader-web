@@ -1,0 +1,250 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passport Reader</title>
+    <link href="/static/output_ost.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-b from-blue-100 to-pink-100 min-h-screen flex items-center justify-center font-sans">
+    <!-- Головна сторінка -->
+    <div id="main-page" class="flex flex-col items-center space-y-6">
+        <h1 class="text-5xl font-bold text-blue-800">Passport Reader</h1>
+        <button onclick="showRegister()" class="bg-blue-300 text-blue-800 py-3 px-4 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300">Реєстрація</button>
+        <button onclick="showLogin()" class="bg-pink-300 text-pink-800 py-3 px-4 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300">Вхід</button>
+    </div>
+
+    <!-- Реєстрація -->
+    <div id="register-page" class="hidden flex flex-col items-center space-y-6 max-w-md w-full p-8 bg-blue-200 rounded-3xl shadow-xl">
+        <h2 class="text-4xl font-bold text-blue-800">Реєстрація</h2>
+        <div class="w-full space-y-4">
+            <input id="reg-login" type="text" placeholder="Логін" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
+            <input id="reg-password" type="password" placeholder="Пароль" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
+            <input id="reg-confirm-password" type="password" placeholder="Підтвердити пароль" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
+        </div>
+        <button onclick="register()" class="bg-blue-300 text-blue-800 py-3 px-4 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300">Зареєструватися</button>
+        <button onclick="showMain()" class="text-blue-600 hover:underline">Повернутися на початкову сторінку</button>
+    </div>
+
+    <!-- Вхід -->
+    <div id="login-page" class="hidden flex flex-col items-center space-y-6 max-w-md w-full p-8 bg-pink-200 rounded-3xl shadow-xl">
+        <h2 class="text-4xl font-bold text-pink-800">Вхід</h2>
+        <div class="w-full space-y-4">
+            <input id="login-login" type="text" placeholder="Логін" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
+            <input id="login-password" type="password" placeholder="Пароль" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
+        </div>
+        <button onclick="login()" class="bg-pink-300 text-pink-800 py-3 px-4 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300">Увійти</button>
+        <button onclick="showMain()" class="text-pink-600 hover:underline">Повернутися на початкову сторінку</button>
+    </div>
+
+    <!-- Акаунт -->
+    <div id="account-page" class="hidden flex flex-col items-center space-y-6 max-w-md w-full p-8 bg-green-200 rounded-3xl shadow-xl">
+        <h2 class="text-4xl font-bold text-green-800">Акаунт</h2>
+        <div class="w-full space-y-4 text-lg text-gray-700">
+            <p>Логін: <span id="account-login"></span></p>
+            <p>Дата створення: <span id="account-created"></span></p>
+            <p>Підписка: <span id="account-subscription"></span></p>
+        </div>
+        <button onclick="logout()" class="bg-red-300 text-red-800 py-3 px-4 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
+    </div>
+
+    <!-- Адмін-панель -->
+    <div id="admin-page" class="hidden flex flex-col items-center space-y-6 max-w-5xl w-full p-8 bg-blue-200 rounded-3xl shadow-xl">
+        <h2 class="text-4xl font-bold text-blue-800">Адміністративна панель</h2>
+        <div class="w-full overflow-x-auto">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-blue-300 text-blue-800">
+                        <th class="p-4 text-left">№</th>
+                        <th class="p-4 text-left">Логін</th>
+                        <th class="p-4 text-left">Дата створення</th>
+                        <th class="p-4 text-left">Пароль (хеш)</th>
+                        <th class="p-4 text-left">Підписка</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-users" class="text-gray-700"></tbody>
+            </table>
+        </div>
+        <button onclick="logout()" class="bg-red-300 text-red-800 py-3 px-4 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
+    </div>
+
+    <!-- Повідомлення -->
+    <div id="notification" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg">Акаунт успішно створено</div>
+    </div>
+
+    <script>
+        const API_URL = "https://your-render-url.com/api"; // Заміни на твій Render URL після розгортання
+
+        function showMain() {
+            document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
+            document.getElementById('main-page').classList.remove('hidden');
+        }
+
+        function showRegister() {
+            document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
+            document.getElementById('register-page').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
+            document.getElementById('login-page').classList.remove('hidden');
+        }
+
+        function showAccount(login, created_at, subscription_active) {
+            document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
+            document.getElementById('account-page').classList.remove('hidden');
+            document.getElementById('account-login').textContent = login;
+            document.getElementById('account-created').textContent = created_at;
+            document.getElementById('account-subscription').textContent = subscription_active ? 'Активна' : 'Неактивна';
+        }
+
+        function showAdmin(users) {
+            document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
+            document.getElementById('admin-page').classList.remove('hidden');
+            const tbody = document.getElementById('admin-users');
+            tbody.innerHTML = '';
+            users.forEach((user, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-4">${index + 1}</td>
+                    <td class="p-4">${user.login}</td>
+                    <td class="p-4">${user.created_at}</td>
+                    <td class="p-4 break-all">${user.password_hash}</td>
+                    <td class="p-4">
+                        <button onclick="updateSubscription('${user.login}', ${!user.subscription_active})" 
+                                class="w-80 py-2 px-4 rounded-xl shadow-lg transition duration-300 
+                                ${user.subscription_active ? 'bg-red-300 hover:bg-red-400 text-red-800' : 'bg-green-300 hover:bg-green-400 text-green-800'}">
+                            ${user.subscription_active ? 'Вимкнути' : 'Увімкнути'}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function register() {
+            const login = document.getElementById('reg-login').value;
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-confirm-password').value;
+
+            if (password !== confirmPassword) {
+                alert('Паролі не збігаються');
+                return;
+            }
+
+            const response = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login, password })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                document.getElementById('notification').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('notification').classList.add('hidden');
+                    showMain();
+                }, 3000);
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function login() {
+            const login = document.getElementById('login-login').value;
+            const password = document.getElementById('login-password').value;
+
+            const response = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login, password })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                if (data.is_admin) {
+                    const adminResponse = await fetch(`${API_URL}/admin/users`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ login, password })
+                    });
+                    const adminData = await adminResponse.json();
+                    if (adminData.status === 'success') {
+                        showAdmin(adminData.users);
+                    }
+                } else {
+                    showAccount(data.login, data.created_at, data.subscription_active);
+                }
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function updateSubscription(userLogin, active) {
+            const response = await fetch(`${API_URL}/admin/update_subscription`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: 'yokoko', password: 'anonanonNbHq1554o', user_login: userLogin, subscription_active: active })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                const adminResponse = await fetch(`${API_URL}/admin/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login: 'yokoko', password: 'anonanonNbHq1554o' })
+                });
+                const adminData = await adminResponse.json();
+                if (adminData.status === 'success') {
+                    showAdmin(adminData.users);
+                }
+            }
+        }
+
+        function logout() {
+            showMain();
+        }
+    </script>
+</body>
+</html>
