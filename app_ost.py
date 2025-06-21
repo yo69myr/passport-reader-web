@@ -1,6 +1,6 @@
 import os
 import psycopg2
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from flask_cors import CORS
@@ -30,6 +30,14 @@ def init_db():
     conn.close()
 
 init_db()
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
 
 @app.route("/api/register", methods=["POST"])
 def register():
