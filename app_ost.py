@@ -78,7 +78,7 @@ def login():
             "status": "success",
             "login": user[0],
             "subscription_active": user[2],
-            "created_at": user[4],
+            "created_at": user[3],  # Змінено з user[4] на user[3]
             "is_admin": is_admin
         })
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
@@ -121,7 +121,7 @@ def get_users():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT login, password_hash, subscription_active, created_at FROM users")
-    users = [{"login": row[0], "password_hash": row[1], "subscription_active": row[2], "created_at": row[4]} for row in cursor.fetchall()]
+    users = [{"login": row[0], "password_hash": row[1], "subscription_active": row[2], "created_at": row[3]} for row in cursor.fetchall()]
     conn.close()
     return jsonify({"status": "success", "users": users})
 
