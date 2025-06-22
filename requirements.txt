@@ -3,3 +3,4 @@ psycopg2-binary
 Werkzeug
 flask-cors
 gunicorn
+pytz
