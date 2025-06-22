@@ -23,7 +23,8 @@ def init_db():
             password_hash TEXT NOT NULL,
             subscription_active BOOLEAN NOT NULL,
             device_id TEXT,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            session_active BOOLEAN DEFAULT FALSE
         )
     """)
     conn.commit()
@@ -54,8 +55,8 @@ def register():
 
     password_hash = generate_password_hash(password)
     created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute("INSERT INTO users (login, password_hash, subscription_active, device_id, created_at) VALUES (%s, %s, %s, %s, %s)",
-                   (login, password_hash, False, None, created_at))
+    cursor.execute("INSERT INTO users (login, password_hash, subscription_active, device_id, created_at, session_active) VALUES (%s, %s, %s, %s, %s, %s)",
+                   (login, password_hash, False, None, created_at, False))
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
@@ -91,15 +92,34 @@ def auth():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT password_hash, subscription_active FROM users WHERE login = %s", (login,))
+    cursor.execute("SELECT password_hash, subscription_active, session_active FROM users WHERE login = %s", (login,))
     user = cursor.fetchone()
-    conn.close()
 
     if user and check_password_hash(user[0], password):
-        if user[1]:
-            return jsonify({"status": "success", "subscription_active": True})
+        if user[1]:  # subscription_active
+            if not user[2]:  # session_active
+                cursor.execute("UPDATE users SET session_active = TRUE WHERE login = %s", (login,))
+                conn.commit()
+                conn.close()
+                return jsonify({"status": "success", "subscription_active": True})
+            conn.close()
+            return jsonify({"status": "error", "message": "Сесія вже активна на іншому пристрої"})
+        conn.close()
         return jsonify({"status": "error", "message": "Підписка неактивна"})
+    conn.close()
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
+
+@app.route("/api/logout", methods=["POST"])
+def logout():
+    data = request.get_json()
+    login = data.get("login")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET session_active = FALSE WHERE login = %s", (login,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success"})
 
 @app.route("/api/admin/users", methods=["POST"])
 def get_users():
@@ -111,8 +131,8 @@ def get_users():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT login, password_hash, subscription_active, created_at FROM users")
-    users = [{"login": row[0], "password_hash": row[1], "subscription_active": row[2], "created_at": row[3]} for row in cursor.fetchall()]
+    cursor.execute("SELECT login, password_hash, subscription_active, created_at, session_active FROM users")
+    users = [{"login": row[0], "password_hash": row[1], "subscription_active": row[2], "created_at": row[3], "session_active": row[4]} for row in cursor.fetchall()]
     conn.close()
     return jsonify({"status": "success", "users": users})
 
