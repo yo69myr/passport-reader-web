@@ -154,5 +154,24 @@ def update_subscription():
     conn.close()
     return jsonify({"status": "success"})
 
+@app.route("/api/force_logout", methods=["POST"])
+def force_logout():
+    data = request.get_json()
+    login = data.get("login")
+    password = data.get("password")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash FROM users WHERE login = %s", (login,))
+    user = cursor.fetchone()
+
+    if user and check_password_hash(user[0], password):
+        cursor.execute("UPDATE users SET session_active = FALSE WHERE login = %s", (login,))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "message": "Стара сесія завершена"})
+    conn.close()
+    return jsonify({"status": "error", "message": "Невірний логін або пароль"})
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
