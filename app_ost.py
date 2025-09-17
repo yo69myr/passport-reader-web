@@ -127,7 +127,7 @@ def get_users():
     login = data.get("login")
     password = data.get("password")
     if login != "yokoko" or password != "anonanonNbHq1554o":
-        return jsonify({"status": "error", "message": "Невірні адмін-дані"}), 401
+        return jsonify({"status": "error", "message": "Невірний логін або пароль"}), 401
 
     conn = get_db()
     cursor = conn.cursor()
