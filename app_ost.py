@@ -173,5 +173,22 @@ def force_logout():
     conn.close()
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
 
+@app.route("/api/check_session", methods=["POST"])
+def check_session():
+    data = request.get_json()
+    login = data.get("login")
+    password = data.get("password")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash, session_active FROM users WHERE login = %s", (login,))
+    user = cursor.fetchone()
+
+    if user and check_password_hash(user[0], password):
+        conn.close()
+        return jsonify({"status": "success", "session_active": user[1]})
+    conn.close()
+    return jsonify({"status": "error", "message": "Невірний логін або пароль"})
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
