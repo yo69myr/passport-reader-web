@@ -190,5 +190,20 @@ def check_session():
     conn.close()
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
 
+@app.route("/api/admin/close_all_sessions", methods=["POST"])
+def close_all_sessions():
+    data = request.get_json()
+    login = data.get("login")
+    password = data.get("password")
+    if login != "yokoko" or password != "anonanonNbHq1554o":
+        return jsonify({"status": "error", "message": "Невірні адмін-дані"}), 401
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET session_active = FALSE")
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success", "message": "Всі сесії завершені"})
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
