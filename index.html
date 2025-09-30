@@ -4,229 +4,262 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Passport Reader</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="./static/output_ost.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100">
-    <div id="home" class="container mx-auto p-4">
-        <h1 class="text-3xl font-bold text-center mb-6">Passport Reader</h1>
-        <div class="flex justify-center space-x-4">
-            <a href="#register" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Реєстрація</a>
-            <a href="#login" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Вхід</a>
-        </div>
+<body class="font-sans min-h-screen bg-gradient-to-b from-blue-100 to-pink-100 flex items-center justify-center">
+    <div id="main-menu" class="bg-white p-10 rounded-3xl shadow-xl max-w-lg w-full text-center">
+        <h1 class="text-5xl font-bold text-blue-800 mb-8">Passport Reader</h1>
+        <button onclick="showRegister()" class="bg-blue-300 text-blue-800 font-medium py-4 px-4 rounded-xl w-80 hover:bg-blue-400 hover:scale-105 transition duration-300">Реєстрація</button>
+        <button onclick="showLogin()" class="bg-pink-300 text-pink-800 font-medium py-4 px-4 rounded-xl w-80 mt-6 hover:bg-pink-400 hover:scale-105 transition duration-300">Вхід</button>
     </div>
 
-    <div id="register" class="container mx-auto p-4 hidden">
-        <h1 class="text-3xl font-bold text-center mb-6">Реєстрація</h1>
-        <form id="register-form" class="max-w-md mx-auto">
-            <div class="mb-4">
-                <label for="reg-login" class="block text-gray-700">Логін</label>
-                <input type="text" id="reg-login" class="w-full p-2 border rounded">
+    <div id="register-form" class="hidden bg-white p-10 rounded-3xl shadow-xl max-w-lg w-full text-center">
+        <h2 class="text-4xl font-bold text-blue-800 mb-8">Реєстрація</h2>
+        <form onsubmit="registerUser(event)">
+            <div class="space-y-6">
+                <input type="text" id="reg-login" placeholder="Логін" class="w-full p-4 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-300 text-lg">
+                <input type="password" id="reg-password" placeholder="Пароль" class="w-full p-4 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-300 text-lg">
             </div>
-            <div class="mb-4">
-                <label for="reg-password" class="block text-gray-700">Пароль</label>
-                <input type="password" id="reg-password" class="w-full p-2 border rounded">
-            </div>
-            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full">Зареєструватися</button>
-            <a href="#home" class="block text-center mt-4 text-blue-500 hover:underline">Повернутися на початкову сторінку</a>
+            <button type="submit" class="bg-blue-300 text-blue-800 font-medium py-4 px-4 rounded-xl w-full mt-8 hover:bg-blue-400 hover:scale-105 transition duration-300">Зареєструватися</button>
         </form>
+        <button onclick="showMainMenu()" class="text-blue-600 mt-2">Повернутися на початкову сторінку</button>
     </div>
 
-    <div id="login" class="container mx-auto p-4 hidden">
-        <h1 class="text-3xl font-bold text-center mb-6">Вхід</h1>
-        <form id="login-form" class="max-w-md mx-auto">
-            <div class="mb-4">
-                <label for="login-login" class="block text-gray-700">Логін</label>
-                <input type="text" id="login-login" class="w-full p-2 border rounded">
+    <div id="login-form" class="hidden bg-white p-10 rounded-3xl shadow-xl max-w-lg w-full text-center">
+        <h2 class="text-4xl font-bold text-pink-800 mb-8">Вхід</h2>
+        <form onsubmit="loginUser(event)">
+            <div class="space-y-6">
+                <input type="text" id="login-login" placeholder="Логін" class="w-full p-4 border border-pink-300 rounded-xl focus:ring-2 focus:ring-blue-300 text-lg">
+                <input type="password" id="login-password" placeholder="Пароль" class="w-full p-4 border border-pink-300 rounded-xl focus:ring-2 focus:ring-blue-300 text-lg">
             </div>
-            <div class="mb-4">
-                <label for="login-password" class="block text-gray-700">Пароль</label>
-                <input type="password" id="login-password" class="w-full p-2 border rounded">
-            </div>
-            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded w-full">Увійти</button>
-            <a href="#home" class="block text-center mt-4 text-blue-500 hover:underline">Повернутися на початкову сторінку</a>
+            <button type="submit" class="bg-pink-300 text-pink-800 font-medium py-4 px-4 rounded-xl w-full mt-8 hover:bg-pink-400 hover:scale-105 transition duration-300">Увійти</button>
         </form>
+        <button onclick="showMainMenu()" class="text-blue-600 mt-2">Повернутися на початкову сторінку</button>
     </div>
 
-    <div id="account" class="container mx-auto p-4 hidden">
-        <h1 class="text-3xl font-bold text-center mb-6">Акаунт</h1>
-        <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
-            <p><strong>Логін:</strong> <span id="account-login"></span></p>
-            <p><strong>Дата створення:</strong> <span id="account-created"></span></p>
-            <p><strong>Підписка:</strong> <span id="account-subscription"></span></p>
-            <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded w-full mt-4">Вийти</button>
-        </div>
+    <div id="account-info" class="hidden bg-white p-10 rounded-3xl shadow-xl max-w-lg w-full text-center">
+        <h2 class="text-4xl font-bold text-blue-800 mb-8">Акаунт</h2>
+        <p class="text-xl text-gray-700">Логін: <span id="account-login"></span></p>
+        <p class="text-xl text-gray-700 mt-2">Дата створення: <span id="account-created"></span></p>
+        <p class="text-xl text-gray-700 mt-2">Підписка: <span id="account-subscription"></span></p>
+        <button onclick="logoutUser()" class="bg-red-300 text-red-800 font-medium py-4 px-4 rounded-xl w-full mt-8 hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
     </div>
 
-    <div id="admin-panel" class="container mx-auto p-4 hidden">
-        <h1 class="text-3xl font-bold text-center mb-6">Адміністративна панель</h1>
-        <table class="w-full max-w-4xl mx-auto bg-white shadow rounded">
+    <div id="admin-panel" class="hidden bg-white p-8 rounded-3xl shadow-xl max-w-5xl w-full overflow-x-auto">
+        <h2 class="text-4xl font-bold text-blue-800 mb-8 text-center">Адміністративна панель</h2>
+        <table class="w-full border-collapse border border-gray-300">
             <thead>
-                <tr class="bg-gray-200">
-                    <th class="p-2">№</th>
-                    <th class="p-2">Логін</th>
-                    <th class="p-2">Дата створення</th>
-                    <th class="p-2">Пароль (хеш)</th>
-                    <th class="p-2">Підписка</th>
+                <tr>
+                    <th class="border border-gray-300 p-2">№</th>
+                    <th class="border border-gray-300 p-2">Логін</th>
+                    <th class="border border-gray-300 p-2">Дата створення</th>
+                    <th class="border border-gray-300 p-2">Пароль (хеш)</th>
+                    <th class="border border-gray-300 p-2">Підписка активна</th>
+                    <th class="border border-gray-300 p-2">Дата закінчення</th>
+                    <th class="border border-gray-300 p-2">Сесія активна</th>
+                    <th class="border border-gray-300 p-2">Дія</th>
                 </tr>
             </thead>
-            <tbody id="admin-table-body"></tbody>
+            <tbody id="users-table">
+            </tbody>
         </table>
-        <button id="close-all-sessions-btn" class="bg-red-400 hover:bg-red-500 text-white font-bold py-2 px-4 rounded mt-4">Завершити всі сесії</button>
-        <button id="admin-logout-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mt-4 ml-4">Вийти</button>
+        <button onclick="endAllSessions()" class="bg-red-300 text-red-800 font-medium py-3 px-4 rounded-xl mt-6 hover:bg-red-400 hover:scale-105 transition duration-300">Завершити всі сесії</button>
+        <button onclick="logoutUser()" class="bg-red-300 text-red-800 font-medium py-3 px-4 rounded-xl mt-6 ml-4 hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
     </div>
 
-    <div id="success" class="container mx-auto p-4 hidden">
-        <h1 class="text-3xl font-bold text-center mb-6">Акаунт успішно створено</h1>
-        <a href="#login" class="block text-center text-blue-500 hover:underline">Перейти до входу</a>
+    <div id="success-message" class="hidden bg-white p-10 rounded-3xl shadow-xl max-w-md w-full text-center">
+        <h2 class="text-4xl font-bold text-green-800 mb-8">Акаунт успішно створено</h2>
+        <button onclick="showLogin()" class="bg-green-300 text-green-800 font-medium py-4 px-4 rounded-xl w-full hover:bg-green-400 hover:scale-105 transition duration-300">Перейти до входу</button>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+            <p id="modal-message" class="text-xl text-gray-700 mb-6"></p>
+            <button onclick="closeModal()" class="bg-blue-300 text-blue-800 font-medium py-3 px-4 rounded-xl hover:bg-blue-400">OK</button>
+        </div>
     </div>
 
     <script>
-        function showSection(sectionId) {
-            document.querySelectorAll('.container').forEach(section => section.classList.add('hidden'));
-            document.getElementById(sectionId).classList.remove('hidden');
+        let currentUser = null;
+        let adminCredentials = { login: 'yokoko', password: 'anonanonNbHq1554o' };
+
+        function showMainMenu() {
+            hideAll();
+            document.getElementById('main-menu').classList.remove('hidden');
         }
 
-        document.querySelectorAll('a[href^="#"]').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                showSection(link.getAttribute('href').substring(1));
-            });
-        });
+        function showRegister() {
+            hideAll();
+            document.getElementById('register-form').classList.remove('hidden');
+        }
 
-        document.getElementById('register-form').addEventListener('submit', function(e) {
-            e.preventDefault();
+        function showLogin() {
+            hideAll();
+            document.getElementById('login-form').classList.remove('hidden');
+        }
+
+        function showAccount(user) {
+            hideAll();
+            document.getElementById('account-info').classList.remove('hidden');
+            document.getElementById('account-login').textContent = user.login;
+            document.getElementById('account-created').textContent = user.created_at;
+            document.getElementById('account-subscription').textContent = user.subscription_active ? 'Активна' : 'Неактивна';
+            if (user.is_admin) {
+                showAdminPanel();
+            }
+        }
+
+        function showAdminPanel() {
+            hideAll();
+            document.getElementById('admin-panel').classList.remove('hidden');
+            fetchUsers();
+        }
+
+        function showSuccess() {
+            hideAll();
+            document.getElementById('success-message').classList.remove('hidden');
+        }
+
+        function hideAll() {
+            const sections = ['main-menu', 'register-form', 'login-form', 'account-info', 'admin-panel', 'success-message'];
+            sections.forEach(id => document.getElementById(id).classList.add('hidden'));
+        }
+
+        function showModal(message) {
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        async function registerUser(event) {
+            event.preventDefault();
             const login = document.getElementById('reg-login').value;
             const password = document.getElementById('reg-password').value;
-            fetch('/api/register', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({login, password})
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'success') {
-                    showSection('success');
-                } else {
-                    alert(data.message);
-                }
-            });
-        });
 
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login, password })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                showSuccess();
+            } else {
+                showModal(data.message);
+            }
+        }
+
+        async function loginUser(event) {
+            event.preventDefault();
             const login = document.getElementById('login-login').value;
             const password = document.getElementById('login-password').value;
-            fetch('/api/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({login, password})
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'success') {
-                    if (login === 'yokoko') {
-                        showSection('admin-panel');
-                        loadAdminPanel();
-                    } else {
-                        showSection('account');
-                        document.getElementById('account-login').textContent = data.user.login;
-                        document.getElementById('account-created').textContent = data.user.created_at;
-                        document.getElementById('account-subscription').textContent = data.user.subscription_active ? 'Активна' : 'Неактивна';
-                    }
-                } else {
-                    alert(data.message);
-                }
-            });
-        });
 
-        document.getElementById('logout-btn').addEventListener('click', function() {
-            fetch('/api/logout', {
+            const response = await fetch('/api/login', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({})
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'success') {
-                    showSection('home');
-                } else {
-                    alert(data.message);
-                }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login, password })
             });
-        });
+            const data = await response.json();
 
-        document.getElementById('admin-logout-btn').addEventListener('click', function() {
-            fetch('/api/logout', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({})
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'success') {
-                    showSection('home');
-                } else {
-                    alert(data.message);
-                }
-            });
-        });
-
-        function loadAdminPanel() {
-            fetch('/api/admin/users', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({login: 'yokoko', password: 'anonanonNbHq1554o'})
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'success') {
-                    const tbody = document.getElementById('admin-table-body');
-                    tbody.innerHTML = '';
-                    data.users.forEach((user, index) => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td class="p-2">${index + 1}</td>
-                            <td class="p-2">${user.login}</td>
-                            <td class="p-2">${user.created_at}</td>
-                            <td class="p-2">${user.password_hash}</td>
-                            <td class="p-2">
-                                <input type="checkbox" ${user.subscription_active ? 'checked' : ''} 
-                                    onchange="toggleSubscription('${user.login}', this.checked)">
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                } else {
-                    alert(data.message);
-                }
-            });
-        }
-
-        function toggleSubscription(login, isActive) {
-            fetch('/api/admin/update_subscription', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    login: 'yokoko',
-                    password: 'anonanonNbHq1554o',
-                    user_login: login,
-                    subscription_active: isActive
-                })
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'success') {
-                    alert('Підписка оновлена');
-                } else {
-                    alert(data.message);
-                }
-            });
-        }
-
-        document.getElementById('close-all-sessions-btn').addEventListener('click', function() {
-            if (confirm("Ви впевнені, що хочете завершити всі сесії?")) {
-                fetch('/api/admin/close_all_sessions', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({login: 'yokoko', password: 'anonanonNbHq1554o'})
-                }).then(res => res.json()).then(data => {
-                    if (data.status === 'success') {
-                        alert('Всі сесії завершені!');
-                        location.reload();  // Онови панель
-                    } else {
-                        alert(data.message);
-                    }
-                });
+            if (data.status === 'success') {
+                currentUser = { login, password };
+                showAccount(data);
+            } else {
+                showModal(data.message);
             }
-        });
+        }
+
+        async function logoutUser() {
+            if (!currentUser) return;
+
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: currentUser.login })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                currentUser = null;
+                showMainMenu();
+            } else {
+                showModal(data.message);
+            }
+        }
+
+        async function fetchUsers() {
+            const response = await fetch('/api/admin/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(adminCredentials)
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                const tableBody = document.getElementById('users-table');
+                tableBody.innerHTML = '';
+                data.users.forEach((user, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="border border-gray-300 p-2">${index + 1}</td>
+                        <td class="border border-gray-300 p-2">${user.login}</td>
+                        <td class="border border-gray-300 p-2">${user.created_at}</td>
+                        <td class="border border-gray-300 p-2 break-all">${user.password_hash}</td>
+                        <td class="border border-gray-300 p-2">${user.subscription_active ? 'Так' : 'Ні'}</td>
+                        <td class="border border-gray-300 p-2">${user.subscription_expiry || 'N/A'}</td>
+                        <td class="border border-gray-300 p-2">${user.session_active ? 'Так' : 'Ні'}</td>
+                        <td class="border border-gray-300 p-2">
+                            <select id="duration-${user.login}" class="p-2 border rounded">
+                                <option value="deactivate">Деактивувати</option>
+                                <option value="1 hour">1 година</option>
+                                <option value="3 hours">3 години</option>
+                                <option value="6 hours">6 годин</option>
+                                <option value="12 hours">12 годин</option>
+                                <option value="24 hours">24 години</option>
+                                <option value="3 days">3 дні</option>
+                                <option value="15 days">15 днів</option>
+                                <option value="30 days">30 днів</option>
+                                <option value="60 days">60 днів</option>
+                                <option value="90 days">90 днів</option>
+                                <option value="120 days">120 днів</option>
+                                <option value="150 days">150 днів</option>
+                            </select>
+                            <button onclick="updateSubscription('${user.login}')" class="bg-blue-200 text-blue-600 py-1 px-2 rounded ml-2 hover:bg-blue-300">Оновити</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } else {
+                showModal(data.message);
+            }
+        }
+
+        async function updateSubscription(userLogin) {
+            const durationSelect = document.getElementById(`duration-${userLogin}`);
+            const duration = durationSelect.value;
+
+            const response = await fetch('/api/admin/update_subscription', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...adminCredentials, user_login: userLogin, duration })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                fetchUsers(); // Оновити таблицю
+            } else {
+                showModal(data.message);
+            }
+        }
+
+        async function endAllSessions() {
+            // Логіка для завершення всіх сесій (якщо потрібно, додайте ендпоінт на бекенді)
+            showModal('Всі сесії завершено (реалізуйте на бекенді якщо потрібно).');
+        }
     </script>
 </body>
 </html>
