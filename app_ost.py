@@ -127,7 +127,7 @@ def get_users():
     login = data.get("login")
     password = data.get("password")
     if login != "yokoko" or password != "anonanonNbHq1554o":
-        return jsonify({"status": "error", "message": "Невірний логін або пароль"}), 401
+        return jsonify({"status": "error", "message": "Невірні адмін-дані"}), 401
 
     conn = get_db()
     cursor = conn.cursor()
@@ -172,38 +172,6 @@ def force_logout():
         return jsonify({"status": "success", "message": "Стара сесія завершена"})
     conn.close()
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
-
-@app.route("/api/check_session", methods=["POST"])
-def check_session():
-    data = request.get_json()
-    login = data.get("login")
-    password = data.get("password")
-
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT password_hash, session_active FROM users WHERE login = %s", (login,))
-    user = cursor.fetchone()
-
-    if user and check_password_hash(user[0], password):
-        conn.close()
-        return jsonify({"status": "success", "session_active": user[1]})
-    conn.close()
-    return jsonify({"status": "error", "message": "Невірний логін або пароль"})
-
-@app.route("/api/admin/close_all_sessions", methods=["POST"])
-def close_all_sessions():
-    data = request.get_json()
-    login = data.get("login")
-    password = data.get("password")
-    if login != "yokoko" or password != "anonanonNbHq1554o":
-        return jsonify({"status": "error", "message": "Невірні адмін-дані"}), 401
-
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET session_active = FALSE")
-    conn.commit()
-    conn.close()
-    return jsonify({"status": "success", "message": "Всі сесії завершені"})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
