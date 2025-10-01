@@ -71,8 +71,7 @@
             </thead>
             <tbody id="admin-table-body"></tbody>
         </table>
-        <button id="close-all-sessions-btn" class="bg-red-400 hover:bg-red-500 text-white font-bold py-2 px-4 rounded mt-4">Завершити всі сесії</button>
-        <button id="admin-logout-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mt-4 ml-4">Вийти</button>
+        <button id="admin-logout-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mt-4">Вийти</button>
     </div>
 
     <div id="success" class="container mx-auto p-4 hidden">
@@ -120,14 +119,14 @@
                 body: JSON.stringify({login, password})
             }).then(res => res.json()).then(data => {
                 if (data.status === 'success') {
-                    if (login === 'yokoko') {
+                    if (data.is_admin) {
                         showSection('admin-panel');
                         loadAdminPanel();
                     } else {
                         showSection('account');
-                        document.getElementById('account-login').textContent = data.user.login;
-                        document.getElementById('account-created').textContent = data.user.created_at;
-                        document.getElementById('account-subscription').textContent = data.user.subscription_active ? 'Активна' : 'Неактивна';
+                        document.getElementById('account-login').textContent = data.login;
+                        document.getElementById('account-created').textContent = data.created_at;
+                        document.getElementById('account-subscription').textContent = data.subscription_active ? 'Активна' : 'Неактивна';
                     }
                 } else {
                     alert(data.message);
@@ -210,23 +209,6 @@
                 }
             });
         }
-
-        document.getElementById('close-all-sessions-btn').addEventListener('click', function() {
-            if (confirm("Ви впевнені, що хочете завершити всі сесії?")) {
-                fetch('/api/admin/close_all_sessions', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({login: 'yokoko', password: 'anonanonNbHq1554o'})
-                }).then(res => res.json()).then(data => {
-                    if (data.status === 'success') {
-                        alert('Всі сесії завершені!');
-                        location.reload();  // Онови панель
-                    } else {
-                        alert(data.message);
-                    }
-                });
-            }
-        });
     </script>
 </body>
 </html>
