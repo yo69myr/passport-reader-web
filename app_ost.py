@@ -121,6 +121,23 @@ def logout():
     conn.close()
     return jsonify({"status": "success"})
 
+@app.route("/api/check_session", methods=["POST"])
+def check_session():
+    data = request.get_json()
+    login = data.get("login")
+    password = data.get("password")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash, session_active FROM users WHERE login = %s", (login,))
+    user = cursor.fetchone()
+
+    if user and check_password_hash(user[0], password):
+        conn.close()
+        return jsonify({"status": "success", "session_active": user[1]})
+    conn.close()
+    return jsonify({"status": "error", "session_active": False})
+
 @app.route("/api/admin/users", methods=["POST"])
 def get_users():
     data = request.get_json()
