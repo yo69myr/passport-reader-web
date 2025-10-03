@@ -18,6 +18,8 @@ def get_db():
 def init_db():
     conn = get_db()
     cursor = conn.cursor()
+    
+    # Создаем таблицу если не существует
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             login TEXT PRIMARY KEY,
@@ -29,6 +31,23 @@ def init_db():
             session_token TEXT
         )
     """)
+    
+    # Проверяем существование колонки session_token и добавляем если нужно
+    try:
+        cursor.execute("SELECT session_token FROM users LIMIT 1")
+    except psycopg2.Error as e:
+        print(f"Error checking session_token: {e}")
+        cursor.execute("ALTER TABLE users ADD COLUMN session_token TEXT")
+        print("Added session_token column")
+    
+    # Проверяем существование колонки session_active и добавляем если нужно
+    try:
+        cursor.execute("SELECT session_active FROM users LIMIT 1")
+    except psycopg2.Error as e:
+        print(f"Error checking session_active: {e}")
+        cursor.execute("ALTER TABLE users ADD COLUMN session_active BOOLEAN DEFAULT FALSE")
+        print("Added session_active column")
+    
     conn.commit()
     conn.close()
 
@@ -192,5 +211,5 @@ def force_logout():
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Используем порт из переменной окружения
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
