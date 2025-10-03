@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from flask_cors import CORS
+import uuid
 
 app = Flask(__name__)
 CORS(app)
@@ -24,7 +25,8 @@ def init_db():
             subscription_active BOOLEAN NOT NULL,
             device_id TEXT,
             created_at TEXT NOT NULL,
-            session_active BOOLEAN DEFAULT FALSE
+            session_active BOOLEAN DEFAULT FALSE,
+            session_token TEXT
         )
     """)
     conn.commit()
@@ -55,8 +57,8 @@ def register():
 
     password_hash = generate_password_hash(password)
     created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute("INSERT INTO users (login, password_hash, subscription_active, device_id, created_at, session_active) VALUES (%s, %s, %s, %s, %s, %s)",
-                   (login, password_hash, False, None, created_at, False))
+    cursor.execute("INSERT INTO users (login, password_hash, subscription_active, device_id, created_at, session_active, session_token) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                   (login, password_hash, False, None, created_at, False, None))
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
@@ -92,17 +94,16 @@ def auth():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT password_hash, subscription_active, session_active FROM users WHERE login = %s", (login,))
+    cursor.execute("SELECT password_hash, subscription_active FROM users WHERE login = %s", (login,))
     user = cursor.fetchone()
 
     if user and check_password_hash(user[0], password):
         if user[1]:  # subscription_active
-            if user[2]:  # session_active - force logout
-                cursor.execute("UPDATE users SET session_active = FALSE WHERE login = %s", (login,))
-            cursor.execute("UPDATE users SET session_active = TRUE WHERE login = %s", (login,))
+            session_token = str(uuid.uuid4())
+            cursor.execute("UPDATE users SET session_active = TRUE, session_token = %s WHERE login = %s", (session_token, login))
             conn.commit()
             conn.close()
-            return jsonify({"status": "success", "subscription_active": True})
+            return jsonify({"status": "success", "subscription_active": True, "session_token": session_token})
         conn.close()
         return jsonify({"status": "error", "message": "Підписка неактивна"})
     conn.close()
@@ -115,7 +116,7 @@ def logout():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("UPDATE users SET session_active = FALSE WHERE login = %s", (login,))
+    cursor.execute("UPDATE users SET session_active = FALSE, session_token = NULL WHERE login = %s", (login,))
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
@@ -125,17 +126,18 @@ def check_session():
     data = request.get_json()
     login = data.get("login")
     password = data.get("password")
+    provided_token = data.get("session_token")
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT password_hash, session_active FROM users WHERE login = %s", (login,))
+    cursor.execute("SELECT password_hash, session_active, session_token FROM users WHERE login = %s", (login,))
     user = cursor.fetchone()
 
-    if user and check_password_hash(user[0], password):
+    if user and check_password_hash(user[0], password) and user[1] and user[2] == provided_token:
         conn.close()
-        return jsonify({"status": "success", "session_active": user[1]})
+        return jsonify({"status": "success", "session_active": True})
     conn.close()
-    return jsonify({"status": "error", "message": "Невірні дані"})
+    return jsonify({"status": "success", "session_active": False})
 
 @app.route("/api/admin/users", methods=["POST"])
 def get_users():
@@ -147,8 +149,8 @@ def get_users():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT login, password_hash, subscription_active, created_at, session_active FROM users")
-    users = [{"login": row[0], "password_hash": row[1], "subscription_active": row[2], "created_at": row[3], "session_active": row[4]} for row in cursor.fetchall()]
+    cursor.execute("SELECT login, password_hash, subscription_active, created_at, session_active, session_token FROM users")
+    users = [{"login": row[0], "password_hash": row[1], "subscription_active": row[2], "created_at": row[3], "session_active": row[4], "session_token": row[5]} for row in cursor.fetchall()]
     conn.close()
     return jsonify({"status": "success", "users": users})
 
@@ -182,7 +184,7 @@ def force_logout():
     user = cursor.fetchone()
 
     if user and check_password_hash(user[0], password):
-        cursor.execute("UPDATE users SET session_active = FALSE WHERE login = %s", (login,))
+        cursor.execute("UPDATE users SET session_active = FALSE, session_token = NULL WHERE login = %s", (login,))
         conn.commit()
         conn.close()
         return jsonify({"status": "success", "message": "Сесія завершена"})
