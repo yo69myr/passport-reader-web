@@ -2,18 +2,13 @@ import os
 import psycopg2
 from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask_cors import CORS
-import threading
-import time
 
 app = Flask(__name__)
 CORS(app)
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
-
-# Словарь для хранения активных сессий (время последней активности)
-active_sessions = {}
 
 def get_db():
     conn = psycopg2.connect(DATABASE_URL)
@@ -29,37 +24,13 @@ def init_db():
             subscription_active BOOLEAN NOT NULL,
             device_id TEXT,
             created_at TEXT NOT NULL,
-            session_active BOOLEAN DEFAULT FALSE,
-            last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            session_active BOOLEAN DEFAULT FALSE
         )
     """)
     conn.commit()
     conn.close()
 
 init_db()
-
-# Фоновая задача для очистки неактивных сессий
-def cleanup_sessions():
-    while True:
-        try:
-            conn = get_db()
-            cursor = conn.cursor()
-            # Сбрасываем сессии, где последняя активность была более 5 минут назад
-            cursor.execute("""
-                UPDATE users 
-                SET session_active = FALSE 
-                WHERE session_active = TRUE 
-                AND last_activity < NOW() - INTERVAL '5 minutes'
-            """)
-            conn.commit()
-            conn.close()
-        except Exception as e:
-            print(f"Error in session cleanup: {e}")
-        time.sleep(60)  # Проверяем каждую минуту
-
-# Запускаем фоновую задачу
-cleanup_thread = threading.Thread(target=cleanup_sessions, daemon=True)
-cleanup_thread.start()
 
 @app.route('/')
 def serve_index():
@@ -126,38 +97,14 @@ def auth():
 
     if user and check_password_hash(user[0], password):
         if user[1]:  # subscription_active
-            if not user[2]:  # session_active
-                cursor.execute("UPDATE users SET session_active = TRUE, last_activity = CURRENT_TIMESTAMP WHERE login = %s", (login,))
-                conn.commit()
-                conn.close()
-                return jsonify({"status": "success", "subscription_active": True})
-            conn.close()
-            return jsonify({"status": "error", "message": "Сесія вже активна на іншому пристрої"})
-        conn.close()
-        return jsonify({"status": "error", "message": "Підписка неактивна"})
-    conn.close()
-    return jsonify({"status": "error", "message": "Невірний логін або пароль"})
-
-@app.route("/api/check_session", methods=["POST"])
-def check_session():
-    data = request.get_json()
-    login = data.get("login")
-    password = data.get("password")
-
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT password_hash, session_active, last_activity FROM users WHERE login = %s", (login,))
-    user = cursor.fetchone()
-
-    if user and check_password_hash(user[0], password):
-        if user[1]:  # session_active
-            # Обновляем время последней активности
-            cursor.execute("UPDATE users SET last_activity = CURRENT_TIMESTAMP WHERE login = %s", (login,))
+            if user[2]:  # session_active - force logout
+                cursor.execute("UPDATE users SET session_active = FALSE WHERE login = %s", (login,))
+            cursor.execute("UPDATE users SET session_active = TRUE WHERE login = %s", (login,))
             conn.commit()
             conn.close()
-            return jsonify({"status": "success", "session_active": True})
+            return jsonify({"status": "success", "subscription_active": True})
         conn.close()
-        return jsonify({"status": "error", "message": "Сесія неактивна"})
+        return jsonify({"status": "error", "message": "Підписка неактивна"})
     conn.close()
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
 
@@ -172,6 +119,23 @@ def logout():
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
+
+@app.route("/api/check_session", methods=["POST"])
+def check_session():
+    data = request.get_json()
+    login = data.get("login")
+    password = data.get("password")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash, session_active FROM users WHERE login = %s", (login,))
+    user = cursor.fetchone()
+
+    if user and check_password_hash(user[0], password):
+        conn.close()
+        return jsonify({"status": "success", "session_active": user[1]})
+    conn.close()
+    return jsonify({"status": "error", "message": "Невірні дані"})
 
 @app.route("/api/admin/users", methods=["POST"])
 def get_users():
@@ -221,7 +185,7 @@ def force_logout():
         cursor.execute("UPDATE users SET session_active = FALSE WHERE login = %s", (login,))
         conn.commit()
         conn.close()
-        return jsonify({"status": "success", "message": "Стара сесія завершена"})
+        return jsonify({"status": "success", "message": "Сесія завершена"})
     conn.close()
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
 
