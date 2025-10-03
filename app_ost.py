@@ -26,29 +26,33 @@ def init_db():
             password_hash TEXT NOT NULL,
             subscription_active BOOLEAN NOT NULL,
             device_id TEXT,
-            created_at TEXT NOT NULL,
-            session_active BOOLEAN DEFAULT FALSE,
-            session_token TEXT
+            created_at TEXT NOT NULL
         )
     """)
+    conn.commit()
     
-    # Проверяем существование колонки session_token и добавляем если нужно
+    # Проверяем и добавляем колонки по отдельности с новыми транзакциями
     try:
         cursor.execute("SELECT session_token FROM users LIMIT 1")
-    except psycopg2.Error as e:
-        print(f"Error checking session_token: {e}")
+    except psycopg2.Error:
+        conn.rollback()
         cursor.execute("ALTER TABLE users ADD COLUMN session_token TEXT")
+        conn.commit()
         print("Added session_token column")
+    else:
+        conn.rollback()
     
-    # Проверяем существование колонки session_active и добавляем если нужно
+    # Новая транзакция для session_active
     try:
         cursor.execute("SELECT session_active FROM users LIMIT 1")
-    except psycopg2.Error as e:
-        print(f"Error checking session_active: {e}")
+    except psycopg2.Error:
+        conn.rollback()
         cursor.execute("ALTER TABLE users ADD COLUMN session_active BOOLEAN DEFAULT FALSE")
+        conn.commit()
         print("Added session_active column")
+    else:
+        conn.rollback()
     
-    conn.commit()
     conn.close()
 
 init_db()
