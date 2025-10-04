@@ -27,12 +27,24 @@ def init_db():
             subscription_active BOOLEAN NOT NULL,
             subscription_expires TIMESTAMP,
             device_id TEXT,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            session_token TEXT,
+            session_active BOOLEAN DEFAULT FALSE
         )
     """)
     conn.commit()
     
     # Проверяем и добавляем колонки по отдельности с новыми транзакциями
+    try:
+        cursor.execute("SELECT subscription_expires FROM users LIMIT 1")
+    except psycopg2.Error:
+        conn.rollback()
+        cursor.execute("ALTER TABLE users ADD COLUMN subscription_expires TIMESTAMP")
+        conn.commit()
+        print("Added subscription_expires column")
+    else:
+        conn.rollback()
+    
     try:
         cursor.execute("SELECT session_token FROM users LIMIT 1")
     except psycopg2.Error:
@@ -43,7 +55,6 @@ def init_db():
     else:
         conn.rollback()
     
-    # Новая транзакция для session_active
     try:
         cursor.execute("SELECT session_active FROM users LIMIT 1")
     except psycopg2.Error:
