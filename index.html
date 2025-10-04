@@ -140,28 +140,63 @@
         }
 
         function showAdmin(users) {
-            document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
-            document.getElementById('admin-page').classList.remove('hidden');
-            const tbody = document.getElementById('admin-users');
-            tbody.innerHTML = '';
-            users.forEach((user, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="p-4">${index + 1}</td>
-                    <td class="p-4">${user.login}</td>
-                    <td class="p-4">${user.created_at}</td>
-                    <td class="p-4 break-all">${user.password_hash}</td>
-                    <td class="p-4">
-                        <button onclick="updateSubscription('${user.login}', ${!user.subscription_active})" 
-                                class="w-80 py-2 px-4 rounded-xl shadow-lg transition duration-300 
-                                ${user.subscription_active ? 'bg-red-300 hover:bg-red-400 text-red-800' : 'bg-green-300 hover:bg-green-400 text-green-800'}">
-                            ${user.subscription_active ? 'Вимкнути' : 'Увімкнути'}
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+    document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
+    document.getElementById('admin-page').classList.remove('hidden');
+    const tbody = document.getElementById('admin-users');
+    tbody.innerHTML = '';
+    
+    // Сортируем пользователей по дате создания (новые сверху)
+    const sortedUsers = users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    sortedUsers.forEach((user, index) => {
+        const tr = document.createElement('tr');
+        
+        // Правильно определяем статус подписки
+        let subscriptionStatus = 'Неактивна';
+        let statusClass = 'text-red-600';
+        
+        if (user.subscription_active) {
+            if (user.subscription_type === 'unlimited' || !user.subscription_expires) {
+                subscriptionStatus = 'Активна (безстроково)';
+            } else {
+                subscriptionStatus = `Активна до ${user.subscription_expires}`;
+            }
+            statusClass = 'text-green-600 font-semibold';
         }
+        
+        tr.innerHTML = `
+            <td class="p-4 border-b">${index + 1}</td>
+            <td class="p-4 border-b font-semibold">${user.login}</td>
+            <td class="p-4 border-b">${user.created_at}</td>
+            <td class="p-4 border-b break-all text-xs">${user.password_hash}</td>
+            <td class="p-4 border-b ${statusClass}">${subscriptionStatus}</td>
+            <td class="p-4 border-b">${user.subscription_expires || '-'}</td>
+            <td class="p-4 border-b">
+                <div class="flex flex-col space-y-1">
+                    <div class="grid grid-cols-3 gap-1">
+                        <button onclick="setSubscription('${user.login}', 1)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">1 год</button>
+                        <button onclick="setSubscription('${user.login}', 3)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 год</button>
+                        <button onclick="setSubscription('${user.login}', 6)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">6 год</button>
+                        <button onclick="setSubscription('${user.login}', 12)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">12 год</button>
+                        <button onclick="setSubscription('${user.login}', 24)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">24 год</button>
+                        <button onclick="setSubscription('${user.login}', 72)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 дні</button>
+                        <button onclick="setSubscription('${user.login}', 360)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">15 дн</button>
+                        <button onclick="setSubscription('${user.login}', 720)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">30 дн</button>
+                        <button onclick="setSubscription('${user.login}', 1440)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">60 дн</button>
+                        <button onclick="setSubscription('${user.login}', 2160)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">90 дн</button>
+                        <button onclick="setSubscription('${user.login}', 2880)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">120 д</button>
+                        <button onclick="setSubscription('${user.login}', 3600)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">150 д</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1">
+                        <button onclick="setSubscription('${user.login}', 0)" class="bg-blue-200 hover:bg-blue-300 text-blue-800 py-1 px-1 rounded text-xs transition duration-300">Безстроково</button>
+                        <button onclick="deactivateSubscription('${user.login}')" class="bg-red-200 hover:bg-red-300 text-red-800 py-1 px-1 rounded text-xs transition duration-300">Вимкнути</button>
+                    </div>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
         async function register() {
             const login = document.getElementById('reg-login').value;
