@@ -2,7 +2,7 @@ import os
 import psycopg2
 from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_cors import CORS
 import uuid
 
@@ -25,6 +25,7 @@ def init_db():
             login TEXT PRIMARY KEY,
             password_hash TEXT NOT NULL,
             subscription_active BOOLEAN NOT NULL,
+            subscription_expires TIMESTAMP,
             device_id TEXT,
             created_at TEXT NOT NULL
         )
@@ -57,6 +58,14 @@ def init_db():
 
 init_db()
 
+def is_subscription_active(subscription_active, subscription_expires):
+    """Проверяет активна ли подписка с учетом времени"""
+    if not subscription_active:
+        return False
+    if subscription_expires:
+        return datetime.utcnow() < subscription_expires
+    return True
+
 @app.route('/')
 def serve_index():
     return send_from_directory('.', 'index.html')
@@ -80,8 +89,8 @@ def register():
 
     password_hash = generate_password_hash(password)
     created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute("INSERT INTO users (login, password_hash, subscription_active, device_id, created_at, session_active, session_token) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                   (login, password_hash, False, None, created_at, False, None))
+    cursor.execute("INSERT INTO users (login, password_hash, subscription_active, subscription_expires, device_id, created_at, session_active, session_token) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                   (login, password_hash, False, None, None, created_at, False, None))
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
@@ -94,19 +103,30 @@ def login():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT login, password_hash, subscription_active, created_at FROM users WHERE login = %s", (login,))
+    cursor.execute("SELECT login, password_hash, subscription_active, subscription_expires, created_at FROM users WHERE login = %s", (login,))
     user = cursor.fetchone()
-    conn.close()
-
+    
     if user and check_password_hash(user[1], password):
+        # Проверяем активность подписки с учетом времени
+        subscription_active = is_subscription_active(user[2], user[3])
+        
+        # Если подписка истекла, обновляем статус
+        if user[2] and not subscription_active:
+            cursor.execute("UPDATE users SET subscription_active = FALSE, subscription_expires = NULL WHERE login = %s", (login,))
+            conn.commit()
+        
         is_admin = login == "yokoko" and password == "anonanonNbHq1554o"
+        conn.close()
+        
         return jsonify({
             "status": "success",
             "login": user[0],
-            "subscription_active": user[2],
-            "created_at": user[3],
+            "subscription_active": subscription_active,
+            "subscription_expires": user[3].strftime("%Y-%m-%d %H:%M:%S") if user[3] else None,
+            "created_at": user[4],
             "is_admin": is_admin
         })
+    conn.close()
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
 
 @app.route("/api/auth", methods=["POST"])
@@ -117,11 +137,13 @@ def auth():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT password_hash, subscription_active FROM users WHERE login = %s", (login,))
+    cursor.execute("SELECT password_hash, subscription_active, subscription_expires FROM users WHERE login = %s", (login,))
     user = cursor.fetchone()
 
     if user and check_password_hash(user[0], password):
-        if user[1]:  # subscription_active
+        subscription_active = is_subscription_active(user[1], user[2])
+        
+        if subscription_active:
             session_token = str(uuid.uuid4())
             cursor.execute("UPDATE users SET session_active = TRUE, session_token = %s WHERE login = %s", (session_token, login))
             conn.commit()
@@ -172,8 +194,24 @@ def get_users():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT login, password_hash, subscription_active, created_at, session_active, session_token FROM users")
-    users = [{"login": row[0], "password_hash": row[1], "subscription_active": row[2], "created_at": row[3], "session_active": row[4], "session_token": row[5]} for row in cursor.fetchall()]
+    cursor.execute("SELECT login, password_hash, subscription_active, subscription_expires, created_at, session_active, session_token FROM users ORDER BY created_at DESC")
+    users = []
+    for row in cursor.fetchall():
+        subscription_active = is_subscription_active(row[2], row[3])
+        # Определяем тип подписки
+        is_unlimited = row[2] and row[3] is None
+        subscription_type = "unlimited" if is_unlimited else "temporary" if row[3] else "none"
+        
+        users.append({
+            "login": row[0], 
+            "password_hash": row[1], 
+            "subscription_active": subscription_active,
+            "subscription_expires": row[3].strftime("%Y-%m-%d %H:%M:%S") if row[3] else None,
+            "subscription_type": subscription_type,
+            "created_at": row[4], 
+            "session_active": row[5], 
+            "session_token": row[6]
+        })
     conn.close()
     return jsonify({"status": "success", "users": users})
 
@@ -187,10 +225,24 @@ def update_subscription():
 
     user_login = data.get("user_login")
     subscription_active = data.get("subscription_active")
+    duration_hours = data.get("duration_hours", 0)  # 0 = бессрочная
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("UPDATE users SET subscription_active = %s WHERE login = %s", (subscription_active, user_login))
+    
+    if subscription_active:
+        if duration_hours > 0:
+            expires_at = datetime.utcnow() + timedelta(hours=duration_hours)
+            cursor.execute("UPDATE users SET subscription_active = %s, subscription_expires = %s WHERE login = %s", 
+                          (True, expires_at, user_login))
+        else:
+            # Бессрочная подписка
+            cursor.execute("UPDATE users SET subscription_active = %s, subscription_expires = NULL WHERE login = %s", 
+                          (True, user_login))
+    else:
+        cursor.execute("UPDATE users SET subscription_active = %s, subscription_expires = NULL WHERE login = %s", 
+                      (False, user_login))
+    
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
