@@ -84,22 +84,25 @@
             <p>Логін: <span id="account-login"></span></p>
             <p>Дата створення: <span id="account-created"></span></p>
             <p>Підписка: <span id="account-subscription"></span></p>
+            <p>Термін дії: <span id="account-expires"></span></p>
         </div>
         <button onclick="logout()" class="bg-red-300 text-red-800 py-3 px-4 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
     </div>
 
     <!-- Адмін-панель -->
-    <div id="admin-page" class="hidden flex flex-col items-center space-y-6 max-w-5xl w-full p-8 bg-blue-200 rounded-3xl shadow-xl">
+    <div id="admin-page" class="hidden flex flex-col items-center space-y-6 w-full p-8 bg-blue-200 rounded-3xl shadow-xl mx-4 max-w-7xl">
         <h2 class="text-4xl font-bold text-blue-800">Адміністративна панель</h2>
-        <div class="w-full overflow-x-auto">
+        <div class="w-full overflow-x-auto max-h-96 overflow-y-auto">
             <table class="w-full border-collapse">
-                <thead>
-                    <tr class="bg-blue-300 text-blue-800">
+                <thead class="sticky top-0 bg-blue-300">
+                    <tr class="text-blue-800">
                         <th class="p-4 text-left">№</th>
                         <th class="p-4 text-left">Логін</th>
                         <th class="p-4 text-left">Дата створення</th>
                         <th class="p-4 text-left">Пароль (хеш)</th>
-                        <th class="p-4 text-left">Підписка</th>
+                        <th class="p-4 text-left">Статус підписки</th>
+                        <th class="p-4 text-left">Термін дії</th>
+                        <th class="p-4 text-left">Дії з підпискою</th>
                     </tr>
                 </thead>
                 <tbody id="admin-users" class="text-gray-700"></tbody>
@@ -109,8 +112,8 @@
     </div>
 
     <!-- Повідомлення -->
-    <div id="notification" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-        <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg">Акаунт успішно створено</div>
+    <div id="notification" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg" id="notification-message">Акаунт успішно створено</div>
     </div>
 
     <script>
@@ -131,72 +134,67 @@
             document.getElementById('login-page').classList.remove('hidden');
         }
 
-        function showAccount(login, created_at, subscription_active) {
+        function showAccount(login, created_at, subscription_active, subscription_expires) {
             document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
             document.getElementById('account-page').classList.remove('hidden');
             document.getElementById('account-login').textContent = login;
             document.getElementById('account-created').textContent = created_at;
-            document.getElementById('account-subscription').textContent = subscription_active ? 'Активна' : 'Неактивна';
+            
+            const subscriptionText = subscription_active ? 
+                `Активна${subscription_expires ? ` до ${subscription_expires}` : ' (безстроково)'}` : 
+                'Неактивна';
+            document.getElementById('account-subscription').textContent = subscriptionText;
+            document.getElementById('account-expires').textContent = subscription_expires || 'Не встановлено';
         }
 
         function showAdmin(users) {
-    document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
-    document.getElementById('admin-page').classList.remove('hidden');
-    const tbody = document.getElementById('admin-users');
-    tbody.innerHTML = '';
-    
-    // Сортируем пользователей по дате создания (новые сверху)
-    const sortedUsers = users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    
-    sortedUsers.forEach((user, index) => {
-        const tr = document.createElement('tr');
-        
-        // Правильно определяем статус подписки
-        let subscriptionStatus = 'Неактивна';
-        let statusClass = 'text-red-600';
-        
-        if (user.subscription_active) {
-            if (user.subscription_type === 'unlimited' || !user.subscription_expires) {
-                subscriptionStatus = 'Активна (безстроково)';
-            } else {
-                subscriptionStatus = `Активна до ${user.subscription_expires}`;
-            }
-            statusClass = 'text-green-600 font-semibold';
+            document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
+            document.getElementById('admin-page').classList.remove('hidden');
+            const tbody = document.getElementById('admin-users');
+            tbody.innerHTML = '';
+            
+            // Сортируем пользователей по дате создания (новые сверху)
+            const sortedUsers = users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            sortedUsers.forEach((user, index) => {
+                const tr = document.createElement('tr');
+                const subscriptionStatus = user.subscription_active ? 
+                    `Активна${user.subscription_expires ? ` до ${user.subscription_expires}` : ' (безстроково)'}` : 
+                    'Неактивна';
+                
+                tr.innerHTML = `
+                    <td class="p-4 border-b">${index + 1}</td>
+                    <td class="p-4 border-b font-semibold">${user.login}</td>
+                    <td class="p-4 border-b">${user.created_at}</td>
+                    <td class="p-4 border-b break-all text-xs">${user.password_hash}</td>
+                    <td class="p-4 border-b ${user.subscription_active ? 'text-green-600 font-semibold' : 'text-red-600'}">${subscriptionStatus}</td>
+                    <td class="p-4 border-b">${user.subscription_expires || '-'}</td>
+                    <td class="p-4 border-b">
+                        <div class="flex flex-col space-y-1">
+                            <div class="grid grid-cols-3 gap-1">
+                                <button onclick="setSubscription('${user.login}', 1)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">1 год</button>
+                                <button onclick="setSubscription('${user.login}', 3)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 год</button>
+                                <button onclick="setSubscription('${user.login}', 6)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">6 год</button>
+                                <button onclick="setSubscription('${user.login}', 12)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">12 год</button>
+                                <button onclick="setSubscription('${user.login}', 24)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">24 год</button>
+                                <button onclick="setSubscription('${user.login}', 72)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 дні</button>
+                                <button onclick="setSubscription('${user.login}', 360)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">15 дн</button>
+                                <button onclick="setSubscription('${user.login}', 720)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">30 дн</button>
+                                <button onclick="setSubscription('${user.login}', 1440)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">60 дн</button>
+                                <button onclick="setSubscription('${user.login}', 2160)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">90 дн</button>
+                                <button onclick="setSubscription('${user.login}', 2880)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">120 д</button>
+                                <button onclick="setSubscription('${user.login}', 3600)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">150 д</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-1">
+                                <button onclick="setSubscription('${user.login}', 0)" class="bg-blue-200 hover:bg-blue-300 text-blue-800 py-1 px-1 rounded text-xs transition duration-300">Безстроково</button>
+                                <button onclick="deactivateSubscription('${user.login}')" class="bg-red-200 hover:bg-red-300 text-red-800 py-1 px-1 rounded text-xs transition duration-300">Вимкнути</button>
+                            </div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
-        
-        tr.innerHTML = `
-            <td class="p-4 border-b">${index + 1}</td>
-            <td class="p-4 border-b font-semibold">${user.login}</td>
-            <td class="p-4 border-b">${user.created_at}</td>
-            <td class="p-4 border-b break-all text-xs">${user.password_hash}</td>
-            <td class="p-4 border-b ${statusClass}">${subscriptionStatus}</td>
-            <td class="p-4 border-b">${user.subscription_expires || '-'}</td>
-            <td class="p-4 border-b">
-                <div class="flex flex-col space-y-1">
-                    <div class="grid grid-cols-3 gap-1">
-                        <button onclick="setSubscription('${user.login}', 1)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">1 год</button>
-                        <button onclick="setSubscription('${user.login}', 3)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 год</button>
-                        <button onclick="setSubscription('${user.login}', 6)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">6 год</button>
-                        <button onclick="setSubscription('${user.login}', 12)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">12 год</button>
-                        <button onclick="setSubscription('${user.login}', 24)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">24 год</button>
-                        <button onclick="setSubscription('${user.login}', 72)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 дні</button>
-                        <button onclick="setSubscription('${user.login}', 360)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">15 дн</button>
-                        <button onclick="setSubscription('${user.login}', 720)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">30 дн</button>
-                        <button onclick="setSubscription('${user.login}', 1440)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">60 дн</button>
-                        <button onclick="setSubscription('${user.login}', 2160)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">90 дн</button>
-                        <button onclick="setSubscription('${user.login}', 2880)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">120 д</button>
-                        <button onclick="setSubscription('${user.login}', 3600)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">150 д</button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-1">
-                        <button onclick="setSubscription('${user.login}', 0)" class="bg-blue-200 hover:bg-blue-300 text-blue-800 py-1 px-1 rounded text-xs transition duration-300">Безстроково</button>
-                        <button onclick="deactivateSubscription('${user.login}')" class="bg-red-200 hover:bg-red-300 text-red-800 py-1 px-1 rounded text-xs transition duration-300">Вимкнути</button>
-                    </div>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
 
         async function register() {
             const login = document.getElementById('reg-login').value;
@@ -216,9 +214,8 @@
             const data = await response.json();
 
             if (data.status === 'success') {
-                document.getElementById('notification').classList.remove('hidden');
+                showNotification('Акаунт успішно створено');
                 setTimeout(() => {
-                    document.getElementById('notification').classList.add('hidden');
                     showMain();
                 }, 3000);
             } else {
@@ -249,22 +246,30 @@
                         showAdmin(adminData.users);
                     }
                 } else {
-                    showAccount(data.login, data.created_at, data.subscription_active);
+                    showAccount(data.login, data.created_at, data.subscription_active, data.subscription_expires);
                 }
             } else {
                 alert(data.message);
             }
         }
 
-        async function updateSubscription(userLogin, active) {
+        async function setSubscription(userLogin, durationHours) {
             const response = await fetch(`${API_URL}/admin/update_subscription`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ login: 'yokoko', password: 'anonanonNbHq1554o', user_login: userLogin, subscription_active: active })
+                body: JSON.stringify({ 
+                    login: 'yokoko', 
+                    password: 'anonanonNbHq1554o', 
+                    user_login: userLogin, 
+                    subscription_active: true,
+                    duration_hours: durationHours
+                })
             });
             const data = await response.json();
 
             if (data.status === 'success') {
+                showNotification(`Підписку для ${userLogin} успішно встановлено на ${getDurationText(durationHours)}`);
+                
                 const adminResponse = await fetch(`${API_URL}/admin/users`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -274,7 +279,67 @@
                 if (adminData.status === 'success') {
                     showAdmin(adminData.users);
                 }
+            } else {
+                alert('Помилка оновлення підписки');
             }
+        }
+
+        async function deactivateSubscription(userLogin) {
+            const response = await fetch(`${API_URL}/admin/update_subscription`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    login: 'yokoko', 
+                    password: 'anonanonNbHq1554o', 
+                    user_login: userLogin, 
+                    subscription_active: false,
+                    duration_hours: 0
+                })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                showNotification(`Підписку для ${userLogin} вимкнено`);
+                
+                const adminResponse = await fetch(`${API_URL}/admin/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login: 'yokoko', password: 'anonanonNbHq1554o' })
+                });
+                const adminData = await adminResponse.json();
+                if (adminData.status === 'success') {
+                    showAdmin(adminData.users);
+                }
+            } else {
+                alert('Помилка вимкнення підписки');
+            }
+        }
+
+        function getDurationText(hours) {
+            if (hours === 0) return 'безстроково';
+            if (hours === 1) return '1 годину';
+            if (hours === 3) return '3 години';
+            if (hours === 6) return '6 годин';
+            if (hours === 12) return '12 годин';
+            if (hours === 24) return '24 години';
+            if (hours === 72) return '3 дні';
+            if (hours === 360) return '15 днів';
+            if (hours === 720) return '30 днів';
+            if (hours === 1440) return '60 днів';
+            if (hours === 2160) return '90 днів';
+            if (hours === 2880) return '120 днів';
+            if (hours === 3600) return '150 днів';
+            return `${hours} годин`;
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notification-message');
+            notificationMessage.textContent = message;
+            notification.classList.remove('hidden');
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
         }
 
         function logout() {
