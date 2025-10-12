@@ -5,6 +5,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from flask_cors import CORS
 import uuid
+import pyotp
+import qrcode
+from io import BytesIO
+import base64
 
 app = Flask(__name__)
 CORS(app)
@@ -65,6 +69,39 @@ def init_db():
     else:
         conn.rollback()
     
+    # Добавляем колонку is_admin
+    try:
+        cursor.execute("SELECT is_admin FROM users LIMIT 1")
+    except psycopg2.Error:
+        conn.rollback()
+        cursor.execute("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE")
+        conn.commit()
+        print("Added is_admin column")
+    else:
+        conn.rollback()
+    
+    # Добавляем колонку totp_secret для 2FA
+    try:
+        cursor.execute("SELECT totp_secret FROM users LIMIT 1")
+    except psycopg2.Error:
+        conn.rollback()
+        cursor.execute("ALTER TABLE users ADD COLUMN totp_secret TEXT")
+        conn.commit()
+        print("Added totp_secret column")
+    else:
+        conn.rollback()
+    
+    # Создаем админа, если не существует
+    admin_login = "yokoko"
+    admin_password = "anonanonNbHq1554o"  # Можно взять из os.environ.get('ADMIN_PASSWORD')
+    admin_hash = generate_password_hash(admin_password)
+    cursor.execute("SELECT login FROM users WHERE login = %s", (admin_login,))
+    if not cursor.fetchone():
+        created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute("INSERT INTO users (login, password_hash, subscription_active, subscription_expires, device_id, created_at, session_active, session_token, is_admin) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                       (admin_login, admin_hash, True, None, None, created_at, False, None, True))
+        conn.commit()
+    
     conn.close()
 
 init_db()
@@ -100,8 +137,8 @@ def register():
 
     password_hash = generate_password_hash(password)
     created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute("INSERT INTO users (login, password_hash, subscription_active, subscription_expires, device_id, created_at, session_active, session_token) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                   (login, password_hash, False, None, None, created_at, False, None))
+    cursor.execute("INSERT INTO users (login, password_hash, subscription_active, subscription_expires, device_id, created_at, session_active, session_token, is_admin) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                   (login, password_hash, False, None, None, created_at, False, None, False))
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
@@ -114,7 +151,7 @@ def login():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT login, password_hash, subscription_active, subscription_expires, created_at FROM users WHERE login = %s", (login,))
+    cursor.execute("SELECT login, password_hash, subscription_active, subscription_expires, created_at, is_admin, totp_secret FROM users WHERE login = %s", (login,))
     user = cursor.fetchone()
     
     if user and check_password_hash(user[1], password):
@@ -126,7 +163,31 @@ def login():
             cursor.execute("UPDATE users SET subscription_active = FALSE, subscription_expires = NULL WHERE login = %s", (login,))
             conn.commit()
         
-        is_admin = login == "yokoko" and password == "anonanonNbHq1554o"
+        is_admin = user[5]
+        totp_secret = user[6]
+        
+        if is_admin:
+            if totp_secret:
+                conn.close()
+                return jsonify({
+                    "status": "2fa_required",
+                    "login": user[0],
+                    "subscription_active": subscription_active,
+                    "subscription_expires": user[3].strftime("%Y-%m-%d %H:%M:%S") if user[3] else None,
+                    "created_at": user[4],
+                    "is_admin": is_admin
+                })
+            else:
+                conn.close()
+                return jsonify({
+                    "status": "2fa_setup_required",
+                    "login": user[0],
+                    "subscription_active": subscription_active,
+                    "subscription_expires": user[3].strftime("%Y-%m-%d %H:%M:%S") if user[3] else None,
+                    "created_at": user[4],
+                    "is_admin": is_admin
+                })
+        
         conn.close()
         
         return jsonify({
@@ -139,6 +200,60 @@ def login():
         })
     conn.close()
     return jsonify({"status": "error", "message": "Невірний логін або пароль"})
+
+@app.route("/api/setup_2fa", methods=["POST"])
+def setup_2fa():
+    data = request.get_json()
+    login = data.get("login")
+    password = data.get("password")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash, is_admin, totp_secret FROM users WHERE login = %s", (login,))
+    user = cursor.fetchone()
+
+    if user and check_password_hash(user[0], password) and user[1]:  # Только для админа
+        if not user[2]:  # Если секрет не установлен (только один раз)
+            secret = pyotp.random_base32()
+            cursor.execute("UPDATE users SET totp_secret = %s WHERE login = %s", (secret, login))
+            conn.commit()
+
+            uri = pyotp.TOTP(secret).provisioning_uri(name=login, issuer_name="Passport Reader")
+            qr = qrcode.QRCode(version=1, box_size=10, border=5)
+            qr.add_data(uri)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color='black', back_color='white')
+            buffered = BytesIO()
+            img.save(buffered)
+            base64_qr = base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+            conn.close()
+            return jsonify({"status": "success", "qr_image": base64_qr, "secret": secret})
+        conn.close()
+        return jsonify({"status": "error", "message": "2FA already set up"})
+    conn.close()
+    return jsonify({"status": "error", "message": "Unauthorized"}), 401
+
+@app.route("/api/verify_2fa", methods=["POST"])
+def verify_2fa():
+    data = request.get_json()
+    login = data.get("login")
+    otp = data.get("otp")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT totp_secret, is_admin FROM users WHERE login = %s", (login,))
+    user = cursor.fetchone()
+
+    if user and user[1] and user[0] and pyotp.TOTP(user[0]).verify(otp):
+        # Генерируем session_token для админа
+        session_token = str(uuid.uuid4())
+        cursor.execute("UPDATE users SET session_active = TRUE, session_token = %s WHERE login = %s", (session_token, login))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "session_token": session_token})
+    conn.close()
+    return jsonify({"status": "error", "message": "Invalid OTP"})
 
 @app.route("/api/auth", methods=["POST"])
 def auth():
@@ -200,63 +315,70 @@ def get_users():
     data = request.get_json()
     login = data.get("login")
     password = data.get("password")
-    if login != "yokoko" or password != "anonanonNbHq1554o":
-        return jsonify({"status": "error", "message": "Невірні адмін-дані"}), 401
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT login, password_hash, subscription_active, subscription_expires, created_at, session_active, session_token FROM users ORDER BY created_at DESC")
-    users = []
-    for row in cursor.fetchall():
-        subscription_active = is_subscription_active(row[2], row[3])
-        # Определяем тип подписки
-        is_unlimited = row[2] and row[3] is None
-        subscription_type = "unlimited" if is_unlimited else "temporary" if row[3] else "none"
-        
-        users.append({
-            "login": row[0], 
-            "password_hash": row[1], 
-            "subscription_active": subscription_active,
-            "subscription_expires": row[3].strftime("%Y-%m-%d %H:%M:%S") if row[3] else None,
-            "subscription_type": subscription_type,
-            "created_at": row[4], 
-            "session_active": row[5], 
-            "session_token": row[6]
-        })
+    cursor.execute("SELECT password_hash, is_admin FROM users WHERE login = %s", (login,))
+    user = cursor.fetchone()
+
+    if user and check_password_hash(user[0], password) and user[1]:
+        cursor.execute("SELECT login, password_hash, subscription_active, subscription_expires, created_at, session_active, session_token FROM users ORDER BY created_at DESC")
+        users = []
+        for row in cursor.fetchall():
+            subscription_active = is_subscription_active(row[2], row[3])
+            # Определяем тип подписки
+            is_unlimited = row[2] and row[3] is None
+            subscription_type = "unlimited" if is_unlimited else "temporary" if row[3] else "none"
+            
+            users.append({
+                "login": row[0], 
+                "password_hash": row[1], 
+                "subscription_active": subscription_active,
+                "subscription_expires": row[3].strftime("%Y-%m-%d %H:%M:%S") if row[3] else None,
+                "subscription_type": subscription_type,
+                "created_at": row[4], 
+                "session_active": row[5], 
+                "session_token": row[6]
+            })
+        conn.close()
+        return jsonify({"status": "success", "users": users})
     conn.close()
-    return jsonify({"status": "success", "users": users})
+    return jsonify({"status": "error", "message": "Невірні адмін-дані"}), 401
 
 @app.route("/api/admin/update_subscription", methods=["POST"])
 def update_subscription():
     data = request.get_json()
     login = data.get("login")
     password = data.get("password")
-    if login != "yokoko" or password != "anonanonNbHq1554o":
-        return jsonify({"status": "error", "message": "Невірні адмін-дані"}), 401
-
-    user_login = data.get("user_login")
-    subscription_active = data.get("subscription_active")
-    duration_hours = data.get("duration_hours", 0)  # 0 = бессрочная
 
     conn = get_db()
     cursor = conn.cursor()
-    
-    if subscription_active:
-        if duration_hours > 0:
-            expires_at = datetime.utcnow() + timedelta(hours=duration_hours)
-            cursor.execute("UPDATE users SET subscription_active = %s, subscription_expires = %s WHERE login = %s", 
-                          (True, expires_at, user_login))
+    cursor.execute("SELECT password_hash, is_admin FROM users WHERE login = %s", (login,))
+    user = cursor.fetchone()
+
+    if user and check_password_hash(user[0], password) and user[1]:
+        user_login = data.get("user_login")
+        subscription_active = data.get("subscription_active")
+        duration_hours = data.get("duration_hours", 0)  # 0 = бессрочная
+
+        if subscription_active:
+            if duration_hours > 0:
+                expires_at = datetime.utcnow() + timedelta(hours=duration_hours)
+                cursor.execute("UPDATE users SET subscription_active = %s, subscription_expires = %s WHERE login = %s", 
+                              (True, expires_at, user_login))
+            else:
+                # Бессрочная подписка
+                cursor.execute("UPDATE users SET subscription_active = %s, subscription_expires = NULL WHERE login = %s", 
+                              (True, user_login))
         else:
-            # Бессрочная подписка
             cursor.execute("UPDATE users SET subscription_active = %s, subscription_expires = NULL WHERE login = %s", 
-                          (True, user_login))
-    else:
-        cursor.execute("UPDATE users SET subscription_active = %s, subscription_expires = NULL WHERE login = %s", 
-                      (False, user_login))
-    
-    conn.commit()
+                          (False, user_login))
+        
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success"})
     conn.close()
-    return jsonify({"status": "success"})
+    return jsonify({"status": "error", "message": "Невірні адмін-дані"}), 401
 
 @app.route("/api/force_logout", methods=["POST"])
 def force_logout():
