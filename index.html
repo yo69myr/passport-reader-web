@@ -116,8 +116,30 @@
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg" id="notification-message">Акаунт успішно створено</div>
     </div>
 
+    <!-- Модал для налаштування 2FA (QR-код) -->
+    <div id="2fa-setup-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
+            <h2 class="text-2xl font-bold mb-4">Налаштування 2FA</h2>
+            <p class="mb-4">Скануйте QR-код у Google Authenticator</p>
+            <img id="2fa-qr-image" src="" alt="QR Code" class="mb-4">
+            <p class="mb-4">Або введіть секрет вручну: <span id="2fa-secret"></span></p>
+            <button onclick="proceedToVerify()" class="bg-blue-300 text-blue-800 py-2 px-4 rounded-xl hover:bg-blue-400 transition duration-300">Я налаштував, перейти до перевірки</button>
+        </div>
+    </div>
+
+    <!-- Модал для введення OTP -->
+    <div id="2fa-verify-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
+            <h2 class="text-2xl font-bold mb-4">Введіть код 2FA</h2>
+            <input id="2fa-otp-input" type="text" maxlength="6" placeholder="6-значний код" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300 mb-4">
+            <button onclick="verify2FA()" class="bg-blue-300 text-blue-800 py-2 px-4 rounded-xl hover:bg-blue-400 transition duration-300">Підтвердити</button>
+        </div>
+    </div>
+
     <script>
         const API_URL = "https://passport-reader-web.onrender.com/api"; 
+        let currentAdminLogin = null;
+        let currentAdminPassword = null;
 
         function showMain() {
             document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
@@ -234,13 +256,13 @@
         }
 
         async function login() {
-            const login = document.getElementById('login-login').value;
-            const password = document.getElementById('login-password').value;
+            const loginValue = document.getElementById('login-login').value;
+            const passwordValue = document.getElementById('login-password').value;
 
             const response = await fetch(`${API_URL}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ login, password })
+                body: JSON.stringify({ login: loginValue, password: passwordValue })
             });
             const data = await response.json();
 
@@ -249,14 +271,79 @@
                     const adminResponse = await fetch(`${API_URL}/admin/users`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ login, password })
+                        body: JSON.stringify({ login: loginValue, password: passwordValue })
                     });
                     const adminData = await adminResponse.json();
                     if (adminData.status === 'success') {
+                        currentAdminLogin = loginValue;
+                        currentAdminPassword = passwordValue;
                         showAdmin(adminData.users);
                     }
                 } else {
                     showAccount(data.login, data.created_at, data.subscription_active, data.subscription_expires);
+                }
+            } else if (data.status === '2fa_setup_required' || data.status === '2fa_required') {
+                currentAdminLogin = loginValue;
+                currentAdminPassword = passwordValue;
+                if (data.status === '2fa_setup_required') {
+                    await setup2FA();
+                } else {
+                    show2FAVerifyModal();
+                }
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function setup2FA() {
+            const response = await fetch(`${API_URL}/setup_2fa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: currentAdminLogin, password: currentAdminPassword })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                document.getElementById('2fa-qr-image').src = `data:image/png;base64,${data.qr_image}`;
+                document.getElementById('2fa-secret').textContent = data.secret;
+                document.getElementById('2fa-setup-modal').classList.remove('hidden');
+            } else {
+                alert(data.message);
+            }
+        }
+
+        function proceedToVerify() {
+            document.getElementById('2fa-setup-modal').classList.add('hidden');
+            show2FAVerifyModal();
+        }
+
+        function show2FAVerifyModal() {
+            document.getElementById('2fa-verify-modal').classList.remove('hidden');
+        }
+
+        async function verify2FA() {
+            const otp = document.getElementById('2fa-otp-input').value;
+
+            const response = await fetch(`${API_URL}/verify_2fa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: currentAdminLogin, otp })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                document.getElementById('2fa-verify-modal').classList.add('hidden');
+                // Теперь загружаем админ-панель
+                const adminResponse = await fetch(`${API_URL}/admin/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login: currentAdminLogin, password: currentAdminPassword })
+                });
+                const adminData = await adminResponse.json();
+                if (adminData.status === 'success') {
+                    showAdmin(adminData.users);
+                } else {
+                    alert('Помилка завантаження адмін-панелі');
                 }
             } else {
                 alert(data.message);
@@ -268,8 +355,8 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    login: 'yokoko', 
-                    password: 'anonanonNbHq1554o', 
+                    login: currentAdminLogin, 
+                    password: currentAdminPassword, 
                     user_login: userLogin, 
                     subscription_active: true,
                     duration_hours: durationHours
@@ -283,7 +370,7 @@
                 const adminResponse = await fetch(`${API_URL}/admin/users`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login: 'yokoko', password: 'anonanonNbHq1554o' })
+                    body: JSON.stringify({ login: currentAdminLogin, password: currentAdminPassword })
                 });
                 const adminData = await adminResponse.json();
                 if (adminData.status === 'success') {
@@ -299,8 +386,8 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    login: 'yokoko', 
-                    password: 'anonanonNbHq1554o', 
+                    login: currentAdminLogin, 
+                    password: currentAdminPassword, 
                     user_login: userLogin, 
                     subscription_active: false,
                     duration_hours: 0
@@ -314,7 +401,7 @@
                 const adminResponse = await fetch(`${API_URL}/admin/users`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login: 'yokoko', password: 'anonanonNbHq1554o' })
+                    body: JSON.stringify({ login: currentAdminLogin, password: currentAdminPassword })
                 });
                 const adminData = await adminResponse.json();
                 if (adminData.status === 'success') {
@@ -353,6 +440,8 @@
         }
 
         function logout() {
+            currentAdminLogin = null;
+            currentAdminPassword = null;
             showMain();
         }
     </script>
