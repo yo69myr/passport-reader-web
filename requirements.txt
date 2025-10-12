@@ -4,3 +4,5 @@ Werkzeug
 flask-cors
 gunicorn
 pytz
+pyotp
+qrcode[pil]
