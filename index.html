@@ -1,4 +1,43 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
@@ -50,25 +89,20 @@
         <button onclick="logout()" class="bg-red-300 text-red-800 py-3 px-4 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
     </div>
 
-    <!-- Адмін-панель — РОЗШИРЕНА ТА З КНОПКОЮ ОНОВИТИ -->
-    <div id="admin-page" class="hidden flex flex-col items-center space-y-6 w-full max-w-7xl mx-4 p-8 bg-blue-200 rounded-3xl shadow-xl">
-        <div class="flex justify-between items-center w-full mb-4">
-            <h2 class="text-4xl font-bold text-blue-800">Адміністративна панель</h2>
-            <button onclick="refreshAdminPanel()" class="bg-green-500 hover:bg-green-600 text-white py-2 px-6 rounded-xl shadow-lg hover:scale-105 transition duration-300 font-semibold">
-                Оновити
-            </button>
-        </div>
-        <div class="w-full overflow-x-auto max-h-screen">
-            <table class="w-full border-collapse text-sm">
-                <thead class="sticky top-0 bg-blue-300 z-10">
+    <!-- Адмін-панель -->
+    <div id="admin-page" class="hidden flex flex-col items-center space-y-6 w-full p-8 bg-blue-200 rounded-3xl shadow-xl mx-4 max-w-7xl">
+        <h2 class="text-4xl font-bold text-blue-800">Адміністративна панель</h2>
+        <div class="w-full overflow-x-auto max-h-96 overflow-y-auto">
+            <table class="w-full border-collapse">
+                <thead class="sticky top-0 bg-blue-300">
                     <tr class="text-blue-800">
-                        <th class="p-3 text-left">№</th>
-                        <th class="p-3 text-left">Логін</th>
-                        <th class="p-3 text-left">Дата створення</th>
-                        <th class="p-3 text-left">Пароль (хеш)</th>
-                        <th class="p-3 text-left">Статус підписки</th>
-                        <th class="p-3 text-left">Термін дії</th>
-                        <th class="p-3 text-left min-w-[300px]">Дії з підпискою</th>
+                        <th class="p-4 text-left">№</th>
+                        <th class="p-4 text-left">Логін</th>
+                        <th class="p-4 text-left">Дата створення</th>
+                        <th class="p-4 text-left">Пароль (хеш)</th>
+                        <th class="p-4 text-left">Статус підписки</th>
+                        <th class="p-4 text-left">Термін дії</th>
+                        <th class="p-4 text-left">Дії з підпискою</th>
                     </tr>
                 </thead>
                 <tbody id="admin-users" class="text-gray-700"></tbody>
@@ -82,17 +116,18 @@
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg" id="notification-message">Акаунт успішно створено</div>
     </div>
 
-    <!-- 2FA Модали -->
+    <!-- Модал для налаштування 2FA (QR-код) -->
     <div id="2fa-setup-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
             <h2 class="text-2xl font-bold mb-4">Налаштування 2FA</h2>
             <p class="mb-4">Скануйте QR-код у Google Authenticator</p>
-            <img id="2fa-qr-image" src="" alt="QR Code" class="mb-4 w-48 h-48">
-            <p class="mb-4">Або введіть секрет вручну: <span id="2fa-secret" class="font-mono"></span></p>
-            <button onclick="proceedToVerify()" class="bg-blue-300 text-blue-800 py-2 px-4 rounded-xl hover:bg-blue-400 transition duration-300">Перейти до перевірки</button>
+            <img id="2fa-qr-image" src="" alt="QR Code" class="mb-4">
+            <p class="mb-4">Або введіть секрет вручну: <span id="2fa-secret"></span></p>
+            <button onclick="proceedToVerify()" class="bg-blue-300 text-blue-800 py-2 px-4 rounded-xl hover:bg-blue-400 transition duration-300">Я налаштував, перейти до перевірки</button>
         </div>
     </div>
 
+    <!-- Модал для введення OTP -->
     <div id="2fa-verify-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
             <h2 class="text-2xl font-bold mb-4">Введіть код 2FA</h2>
@@ -134,80 +169,186 @@
             document.getElementById('account-expires').textContent = subscription_expires || 'Не встановлено';
         }
 
-        // === НОВА ФУНКЦІЯ: ОНОВЛЕННЯ АДМІН-ПАНЕЛІ БЕЗ ВИХОДУ ===
-        async function refreshAdminPanel() {
-            if (!currentAdminLogin || !currentAdminPassword) {
-                alert("Сесія адміна втрачена. Увійдіть знову.");
-                logout();
+        function showAdmin(users) {
+    document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
+    document.getElementById('admin-page').classList.remove('hidden');
+    const tbody = document.getElementById('admin-users');
+    tbody.innerHTML = '';
+    
+    // Сортируем пользователей по дате создания (новые сверху)
+    const sortedUsers = users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    sortedUsers.forEach((user, index) => {
+        const tr = document.createElement('tr');
+        
+        // Правильно определяем статус подписки
+        let subscriptionStatus = 'Неактивна';
+        let statusClass = 'text-red-600';
+        
+        if (user.subscription_active) {
+            if (user.subscription_type === 'unlimited' || !user.subscription_expires) {
+                subscriptionStatus = 'Активна (безстроково)';
+            } else {
+                subscriptionStatus = `Активна до ${user.subscription_expires}`;
+            }
+            statusClass = 'text-green-600 font-semibold';
+        }
+        
+        tr.innerHTML = `
+            <td class="p-4 border-b">${index + 1}</td>
+            <td class="p-4 border-b font-semibold">${user.login}</td>
+            <td class="p-4 border-b">${user.created_at}</td>
+            <td class="p-4 border-b break-all text-xs">${user.password_hash}</td>
+            <td class="p-4 border-b ${statusClass}">${subscriptionStatus}</td>
+            <td class="p-4 border-b">${user.subscription_expires || '-'}</td>
+            <td class="p-4 border-b">
+                <div class="flex flex-col space-y-1">
+                    <div class="grid grid-cols-3 gap-1">
+                        <button onclick="setSubscription('${user.login}', 1)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">1 год</button>
+                        <button onclick="setSubscription('${user.login}', 3)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 год</button>
+                        <button onclick="setSubscription('${user.login}', 6)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">6 год</button>
+                        <button onclick="setSubscription('${user.login}', 12)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">12 год</button>
+                        <button onclick="setSubscription('${user.login}', 24)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">24 год</button>
+                        <button onclick="setSubscription('${user.login}', 72)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 дні</button>
+                        <button onclick="setSubscription('${user.login}', 360)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">15 дн</button>
+                        <button onclick="setSubscription('${user.login}', 720)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">30 дн</button>
+                        <button onclick="setSubscription('${user.login}', 1440)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">60 дн</button>
+                        <button onclick="setSubscription('${user.login}', 2160)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">90 дн</button>
+                        <button onclick="setSubscription('${user.login}', 2880)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">120 д</button>
+                        <button onclick="setSubscription('${user.login}', 3600)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">150 д</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1">
+                        <button onclick="setSubscription('${user.login}', 0)" class="bg-blue-200 hover:bg-blue-300 text-blue-800 py-1 px-1 rounded text-xs transition duration-300">Безстроково</button>
+                        <button onclick="deactivateSubscription('${user.login}')" class="bg-red-200 hover:bg-red-300 text-red-800 py-1 px-1 rounded text-xs transition duration-300">Вимкнути</button>
+                    </div>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+        async function register() {
+            const login = document.getElementById('reg-login').value;
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-confirm-password').value;
+
+            if (password !== confirmPassword) {
+                alert('Паролі не збігаються');
                 return;
             }
 
-            const adminResponse = await fetch(`${API_URL}/admin/users`, {
+            const response = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login, password })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                showNotification('Акаунт успішно створено');
+                setTimeout(() => {
+                    showMain();
+                }, 3000);
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function login() {
+            const loginValue = document.getElementById('login-login').value;
+            const passwordValue = document.getElementById('login-password').value;
+
+            const response = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: loginValue, password: passwordValue })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                if (data.is_admin) {
+                    const adminResponse = await fetch(`${API_URL}/admin/users`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ login: loginValue, password: passwordValue })
+                    });
+                    const adminData = await adminResponse.json();
+                    if (adminData.status === 'success') {
+                        currentAdminLogin = loginValue;
+                        currentAdminPassword = passwordValue;
+                        showAdmin(adminData.users);
+                    }
+                } else {
+                    showAccount(data.login, data.created_at, data.subscription_active, data.subscription_expires);
+                }
+            } else if (data.status === '2fa_setup_required' || data.status === '2fa_required') {
+                currentAdminLogin = loginValue;
+                currentAdminPassword = passwordValue;
+                if (data.status === '2fa_setup_required') {
+                    await setup2FA();
+                } else {
+                    show2FAVerifyModal();
+                }
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function setup2FA() {
+            const response = await fetch(`${API_URL}/setup_2fa`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ login: currentAdminLogin, password: currentAdminPassword })
             });
-            const adminData = await adminResponse.json();
-            if (adminData.status === 'success') {
-                showAdmin(adminData.users);
-                showNotification("Список користувачів оновлено!");
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                document.getElementById('2fa-qr-image').src = `data:image/png;base64,${data.qr_image}`;
+                document.getElementById('2fa-secret').textContent = data.secret;
+                document.getElementById('2fa-setup-modal').classList.remove('hidden');
             } else {
-                alert("Помилка оновлення: " + adminData.message);
-                logout();
+                alert(data.message);
             }
         }
 
-        function showAdmin(users) {
-            document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
-            document.getElementById('admin-page').classList.remove('hidden');
-            const tbody = document.getElementById('admin-users');
-            tbody.innerHTML = '';
-            
-            const sortedUsers = users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            
-            sortedUsers.forEach((user, index) => {
-                let subscriptionStatus = 'Неактивна';
-                let statusClass = 'text-red-600';
-                
-                if (user.subscription_active) {
-                    if (user.subscription_type === 'unlimited' || !user.subscription_expires) {
-                        subscriptionStatus = 'Активна (безстроково)';
-                    } else {
-                        subscriptionStatus = `Активна до ${user.subscription_expires}`;
-                    }
-                    statusClass = 'text-green-600 font-semibold';
-                }
-                
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-blue-50 transition';
-                tr.innerHTML = `
-                    <td class="p-3 border-b">${index + 1}</td>
-                    <td class="p-3 border-b font-semibold">${user.login}</td>
-                    <td class="p-3 border-b text-xs">${user.created_at}</td>
-                    <td class="p-3 border-b break-all text-xs font-mono">${user.password_hash}</td>
-                    <td class="p-3 border-b ${statusClass}">${subscriptionStatus}</td>
-                    <td class="p-3 border-b text-xs">${user.subscription_expires || '-'}</td>
-                    <td class="p-3 border-b">
-                        <div class="flex flex-wrap gap-1">
-                            ${[1,3,6,12,24,72,360,720,1440,2160,2880,3600].map(h => 
-                                `<button onclick="setSubscription('${user.login}', ${h})" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300 whitespace-nowrap">${getDurationText(h)}</button>`
-                            ).join('')}
-                            <button onclick="setSubscription('${user.login}', 0)" class="bg-blue-200 hover:bg-blue-300 text-blue-800 py-1 px-2 rounded text-xs transition duration-300">Безстроково</button>
-                            <button onclick="deactivateSubscription('${user.login}')" class="bg-red-200 hover:bg-red-300 text-red-800 py-1 px-2 rounded text-xs transition duration-300">Вимкнути</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+        function proceedToVerify() {
+            document.getElementById('2fa-setup-modal').classList.add('hidden');
+            show2FAVerifyModal();
         }
 
-        // === РЕЄСТРАЦІЯ, ЛОГІН, 2FA — без змін ===
-        async function register() { /* ... без змін ... */ }
-        async function login() { /* ... без змін ... */ }
-        async function setup2FA() { /* ... без змін ... */ }
-        function proceedToVerify() { /* ... без змін ... */ }
-        function show2FAVerifyModal() { /* ... без змін ... */ }
-        async function verify2FA() { /* ... без змін ... */ }
+        function show2FAVerifyModal() {
+            document.getElementById('2fa-verify-modal').classList.remove('hidden');
+        }
+
+        async function verify2FA() {
+            const otp = document.getElementById('2fa-otp-input').value;
+
+            const response = await fetch(`${API_URL}/verify_2fa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: currentAdminLogin, otp })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                document.getElementById('2fa-verify-modal').classList.add('hidden');
+                // Теперь загружаем админ-панель
+                const adminResponse = await fetch(`${API_URL}/admin/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login: currentAdminLogin, password: currentAdminPassword })
+                });
+                const adminData = await adminResponse.json();
+                if (adminData.status === 'success') {
+                    showAdmin(adminData.users);
+                } else {
+                    alert('Помилка завантаження адмін-панелі');
+                }
+            } else {
+                alert(data.message);
+            }
+        }
 
         async function setSubscription(userLogin, durationHours) {
             const response = await fetch(`${API_URL}/admin/update_subscription`, {
@@ -222,11 +363,21 @@
                 })
             });
             const data = await response.json();
+
             if (data.status === 'success') {
-                showNotification(`Підписку для ${userLogin} встановлено на ${getDurationText(durationHours)}`);
-                refreshAdminPanel(); // Оновлюємо автоматично
+                showNotification(`Підписку для ${userLogin} успішно встановлено на ${getDurationText(durationHours)}`);
+                
+                const adminResponse = await fetch(`${API_URL}/admin/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login: currentAdminLogin, password: currentAdminPassword })
+                });
+                const adminData = await adminResponse.json();
+                if (adminData.status === 'success') {
+                    showAdmin(adminData.users);
+                }
             } else {
-                alert('Помилка');
+                alert('Помилка оновлення підписки');
             }
         }
 
@@ -243,17 +394,39 @@
                 })
             });
             const data = await response.json();
+
             if (data.status === 'success') {
                 showNotification(`Підписку для ${userLogin} вимкнено`);
-                refreshAdminPanel();
+                
+                const adminResponse = await fetch(`${API_URL}/admin/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login: currentAdminLogin, password: currentAdminPassword })
+                });
+                const adminData = await adminResponse.json();
+                if (adminData.status === 'success') {
+                    showAdmin(adminData.users);
+                }
             } else {
-                alert('Помилка');
+                alert('Помилка вимкнення підписки');
             }
         }
 
         function getDurationText(hours) {
-            const map = {0:'безстроково',1:'1 год',3:'3 год',6:'6 год',12:'12 год',24:'24 год',72:'3 дні',360:'15 дн',720:'30 дн',1440:'60 дн',2160:'90 дн',2880:'120 д',3600:'150 д'};
-            return map[hours] || `${hours} год`;
+            if (hours === 0) return 'безстроково';
+            if (hours === 1) return '1 годину';
+            if (hours === 3) return '3 години';
+            if (hours === 6) return '6 годин';
+            if (hours === 12) return '12 годин';
+            if (hours === 24) return '24 години';
+            if (hours === 72) return '3 дні';
+            if (hours === 360) return '15 днів';
+            if (hours === 720) return '30 днів';
+            if (hours === 1440) return '60 днів';
+            if (hours === 2160) return '90 днів';
+            if (hours === 2880) return '120 днів';
+            if (hours === 3600) return '150 днів';
+            return `${hours} годин`;
         }
 
         function showNotification(message) {
@@ -261,7 +434,9 @@
             const notificationMessage = document.getElementById('notification-message');
             notificationMessage.textContent = message;
             notification.classList.remove('hidden');
-            setTimeout(() => notification.classList.add('hidden'), 3000);
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
         }
 
         function logout() {
