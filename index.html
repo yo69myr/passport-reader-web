@@ -12,22 +12,22 @@
                 var firstSheetName = workbook.SheetNames[0];
                 var worksheet = workbook.Sheets[firstSheetName];
 
-                // Convert sheet to JSON to filter blank rows
+                //все у джнсн, щоб відфільтрувати порожні рядки
                 var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                // фільтруємо всі комірки рядки мають значення нуль або не читай будь ласка,я вважаю це порушенням авторського права , користуйся калькулятором але підглядати не треба , все фіксується, ти не думай :))
                 var filteredData = jsonData.filter(row => row.some(filledCell));
 
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                // еврістика наше все, заголовки
                 var headerRowIndex = filteredData.findIndex((row, index) =>
                   row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
                 );
-                // Fallback
+                // фейл 
                 if (headerRowIndex === -1 || headerRowIndex > 25) {
                   headerRowIndex = 0;
                 }
 
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                // джсн в ксв
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // аркуш масив максимів 
                 csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
                 return csv;
             } catch (e) {
@@ -116,16 +116,7 @@
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg" id="notification-message">Акаунт успішно створено</div>
     </div>
 
-    <!-- Модал для налаштування 2FA (QR-код) -->
-    <div id="2fa-setup-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-        <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
-            <h2 class="text-2xl font-bold mb-4">Налаштування 2FA</h2>
-            <p class="mb-4">Скануйте QR-код у Google Authenticator</p>
-            <img id="2fa-qr-image" src="" alt="QR Code" class="mb-4">
-            <p class="mb-4">Або введіть секрет вручну: <span id="2fa-secret"></span></p>
-            <button onclick="proceedToVerify()" class="bg-blue-300 text-blue-800 py-2 px-4 rounded-xl hover:bg-blue-400 transition duration-300">Я налаштував, перейти до перевірки</button>
-        </div>
-    </div>
+  
 
     <!-- Модал для введення OTP -->
     <div id="2fa-verify-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
@@ -175,13 +166,13 @@
     const tbody = document.getElementById('admin-users');
     tbody.innerHTML = '';
     
-    // Сортируем пользователей по дате создания (новые сверху)
+    //сортуємо користувачів, нові зверху 
     const sortedUsers = users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
     sortedUsers.forEach((user, index) => {
         const tr = document.createElement('tr');
         
-        // Правильно определяем статус подписки
+        // а підписочка активна , а ?? а підписочка активна ??? а , скажи будь ласка ,, ааа ??? 
         let subscriptionStatus = 'Неактивна';
         let statusClass = 'text-red-600';
         
