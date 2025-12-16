@@ -23,7 +23,7 @@ def init_db():
     conn = get_db()
     cursor = conn.cursor()
     
-    # Создаем таблицу если не существует
+    # табличку   /* ====================   Copyright © 2025 [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.) ==================== */
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             login TEXT PRIMARY KEY,
@@ -38,7 +38,7 @@ def init_db():
     """)
     conn.commit()
     
-    # Проверяем и добавляем колонки по отдельности с новыми транзакциями
+    # перевірки колонок транзакції
     try:
         cursor.execute("SELECT subscription_expires FROM users LIMIT 1")
     except psycopg2.Error:
@@ -69,7 +69,7 @@ def init_db():
     else:
         conn.rollback()
     
-    # Добавляем колонку is_admin
+    # колонка таблиці 
     try:
         cursor.execute("SELECT is_admin FROM users LIMIT 1")
     except psycopg2.Error:
@@ -80,7 +80,7 @@ def init_db():
     else:
         conn.rollback()
     
-    # Добавляем колонку totp_secret для 2FA
+    # колонка таболиці 
     try:
         cursor.execute("SELECT totp_secret FROM users LIMIT 1")
     except psycopg2.Error:
@@ -91,23 +91,15 @@ def init_db():
     else:
         conn.rollback()
     
-    # Создаем админа, если не существует
-    admin_login = "yokoko"
-    admin_password = "anonanonNbHq1554o"  # Можно взять из os.environ.get('ADMIN_PASSWORD')
-    admin_hash = generate_password_hash(admin_password)
-    cursor.execute("SELECT login FROM users WHERE login = %s", (admin_login,))
-    if not cursor.fetchone():
-        created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("INSERT INTO users (login, password_hash, subscription_active, subscription_expires, device_id, created_at, session_active, session_token, is_admin) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                       (admin_login, admin_hash, True, None, None, created_at, False, None, True))
-        conn.commit()
+    # база рух
+    
     
     conn.close()
 
 init_db()
 
 def is_subscription_active(subscription_active, subscription_expires):
-    """Проверяет активна ли подписка с учетом времени"""
+    """перепіряємо активна підпска з часом """
     if not subscription_active:
         return False
     if subscription_expires:
@@ -155,10 +147,10 @@ def login():
     user = cursor.fetchone()
     
     if user and check_password_hash(user[1], password):
-        # Проверяем активность подписки с учетом времени
+        # перевіряємо активність підписки з чаасом /* ====================   Copyright © 2025 [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.) ==================== */
         subscription_active = is_subscription_active(user[2], user[3])
         
-        # Если подписка истекла, обновляем статус
+        # якщо підпска не альо ф5
         if user[2] and not subscription_active:
             cursor.execute("UPDATE users SET subscription_active = FALSE, subscription_expires = NULL WHERE login = %s", (login,))
             conn.commit()
@@ -212,8 +204,8 @@ def setup_2fa():
     cursor.execute("SELECT password_hash, is_admin, totp_secret FROM users WHERE login = %s", (login,))
     user = cursor.fetchone()
 
-    if user and check_password_hash(user[0], password) and user[1]:  # Только для админа
-        if not user[2]:  # Если секрет не установлен (только один раз)
+    if user and check_password_hash(user[0], password) and user[1]:  # хеш
+        if not user[2]:  # крктнй вхід крствча   
             secret = pyotp.random_base32()
             cursor.execute("UPDATE users SET totp_secret = %s WHERE login = %s", (secret, login))
             conn.commit()
