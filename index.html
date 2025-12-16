@@ -14,10 +14,10 @@
 
                 //все у джнсн, щоб відфільтрувати порожні рядки
                 var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // фільтруємо всі комірки рядки мають значення нуль або не читай будь ласка,я вважаю це порушенням авторського права , користуйся калькулятором але підглядати не треба , все фіксується, ти не думай :))
+                // фільтруємо всі комірки рядки мають значення нуль або не читай будь ласка,я вважаю це порушенням авторського права , користуйся калькулятором але підглядати не треба , все фіксується, ти не думай :))  
                 var filteredData = jsonData.filter(row => row.some(filledCell));
 
-                // еврістика наше все, заголовки
+                // еврістика наше все, заголовки   /* ====================   Copyright © 2025 [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.) ==================== */
                 var headerRowIndex = filteredData.findIndex((row, index) =>
                   row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
                 );
@@ -26,7 +26,7 @@
                   headerRowIndex = 0;
                 }
 
-                // джсн в ксв
+                // джсн в ксв   /* ====================   Copyright © 2025 [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.) ==================== */
                 var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // аркуш масив максимів 
                 csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
                 return csv;
@@ -89,7 +89,7 @@
         <button onclick="logout()" class="bg-red-300 text-red-800 py-3 px-4 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
     </div>
 
-    <!-- Адмін-панель -->
+    <!-- Адмін-панель -->   
     <div id="admin-page" class="hidden flex flex-col items-center space-y-6 w-full p-8 bg-blue-200 rounded-3xl shadow-xl mx-4 max-w-7xl">
         <h2 class="text-4xl font-bold text-blue-800">Адміністративна панель</h2>
         <div class="w-full overflow-x-auto max-h-96 overflow-y-auto">
