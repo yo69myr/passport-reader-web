@@ -238,7 +238,7 @@ def verify_2fa():
     user = cursor.fetchone()
 
     if user and user[1] and user[0] and pyotp.TOTP(user[0]).verify(otp):
-        # Генерируем session_token для админа
+        # генеруємо токен  session_token для адміна   /* ====================   Copyright © 2025 [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.) =========
         session_token = str(uuid.uuid4())
         cursor.execute("UPDATE users SET session_active = TRUE, session_token = %s WHERE login = %s", (session_token, login))
         conn.commit()
@@ -318,7 +318,7 @@ def get_users():
         users = []
         for row in cursor.fetchall():
             subscription_active = is_subscription_active(row[2], row[3])
-            # Определяем тип подписки
+            # підписочка гиги визначаємо тип 
             is_unlimited = row[2] and row[3] is None
             subscription_type = "unlimited" if is_unlimited else "temporary" if row[3] else "none"
             
@@ -351,7 +351,7 @@ def update_subscription():
     if user and check_password_hash(user[0], password) and user[1]:
         user_login = data.get("user_login")
         subscription_active = data.get("subscription_active")
-        duration_hours = data.get("duration_hours", 0)  # 0 = бессрочная
+        duration_hours = data.get("duration_hours", 0)  # 0 = скіки душа бажає на здоровля
 
         if subscription_active:
             if duration_hours > 0:
@@ -359,7 +359,7 @@ def update_subscription():
                 cursor.execute("UPDATE users SET subscription_active = %s, subscription_expires = %s WHERE login = %s", 
                               (True, expires_at, user_login))
             else:
-                # Бессрочная подписка
+                # підписочка без терміну
                 cursor.execute("UPDATE users SET subscription_active = %s, subscription_expires = NULL WHERE login = %s", 
                               (True, user_login))
         else:
