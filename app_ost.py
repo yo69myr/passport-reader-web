@@ -129,6 +129,31 @@ def register():
 
     password_hash = generate_password_hash(password)
     created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Пробна підписка на 3 дні
+    trial_expires = datetime.utcnow() + timedelta(days=3)
+
+    cursor.execute("""
+        INSERT INTO users 
+        (login, password_hash, subscription_active, subscription_expires, device_id, created_at, session_active, session_token, is_admin) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (
+        login, 
+        password_hash, 
+        True,                  # активна
+        trial_expires,         # закінчується через 3 дні
+        None, 
+        created_at, 
+        False, 
+        None, 
+        False
+    ))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success", "message": "Реєстрація успішна. Вам надано пробну підписку на 3 дні!"})
+
+    password_hash = generate_password_hash(password)
+    created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute("INSERT INTO users (login, password_hash, subscription_active, subscription_expires, device_id, created_at, session_active, session_token, is_admin) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                    (login, password_hash, False, None, None, created_at, False, None, False))
     conn.commit()
