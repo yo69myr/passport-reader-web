@@ -1,57 +1,21 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                //все у джнсн, щоб відфільтрувати порожні рядки
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // фільтруємо всі комірки рядки мають значення нуль або не читай будь ласка,я вважаю це порушенням авторського права , користуйся калькулятором але підглядати не треба , все фіксується, ти не думай :))  
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // еврістика наше все, заголовки   /* ====================   Copyright © 2025 [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.) ==================== */
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // фейл 
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // джсн в ксв   /* ====================   Copyright © 2025 [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.) ==================== */
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // аркуш масив максимів 
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+```html
+<!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passport Reader</title>
+    <title>РОБОЧЕ МІСЦЕ НОТАРІУСА</title>
     <link href="/static/output_ost.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gradient-to-b from-blue-100 to-pink-100 min-h-screen flex items-center justify-center font-sans">
+<body class="bg-gradient-to-b from-blue-100 to-pink-100 min-h-screen flex items-center justify-center font-sans relative">
     <!-- Головна сторінка -->
     <div id="main-page" class="flex flex-col items-center space-y-6">
-        <h1 class="text-5xl font-bold text-blue-800">Passport Reader</h1>
-        <button onclick="showRegister()" class="bg-blue-300 text-blue-800 py-3 px-4 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300">Реєстрація</button>
-        <button onclick="showLogin()" class="bg-pink-300 text-pink-800 py-3 px-4 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300">Вхід</button>
+        <h1 class="text-5xl font-bold text-blue-800">РОБОЧЕ МІСЦЕ НОТАРІУСА</h1>
+        <button onclick="showRegister()" class="w-64 bg-blue-300 text-blue-800 py-4 px-6 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300">Реєстрація</button>
+        <button onclick="showLogin()" class="w-64 bg-pink-300 text-pink-800 py-4 px-6 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300">Вхід</button>
+        <button onclick="window.open('https://t.me/yo_myr')" class="w-64 bg-green-300 text-green-800 py-4 px-6 rounded-xl shadow-lg hover:bg-green-400 hover:scale-105 transition duration-300">Зв'язатися з автором проекту</button>
+        <button onclick="window.open('https://calc-49ke.onrender.com')" class="w-64 bg-purple-300 text-purple-800 py-4 px-6 rounded-xl shadow-lg hover:bg-purple-400 hover:scale-105 transition duration-300">Онлайн калькулятор вартості нотаріальних послуг</button>
     </div>
 
     <!-- Реєстрація -->
@@ -62,7 +26,7 @@
             <input id="reg-password" type="password" placeholder="Пароль" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
             <input id="reg-confirm-password" type="password" placeholder="Підтвердити пароль" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
         </div>
-        <button onclick="register()" class="bg-blue-300 text-blue-800 py-3 px-4 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300">Зареєструватися</button>
+        <button onclick="register()" class="w-64 bg-blue-300 text-blue-800 py-4 px-6 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300">Зареєструватися</button>
         <button onclick="showMain()" class="text-blue-600 hover:underline">Повернутися на початкову сторінку</button>
     </div>
 
@@ -73,7 +37,7 @@
             <input id="login-login" type="text" placeholder="Логін" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
             <input id="login-password" type="password" placeholder="Пароль" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
         </div>
-        <button onclick="login()" class="bg-pink-300 text-pink-800 py-3 px-4 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300">Увійти</button>
+        <button onclick="login()" class="w-64 bg-pink-300 text-pink-800 py-4 px-6 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300">Увійти</button>
         <button onclick="showMain()" class="text-pink-600 hover:underline">Повернутися на початкову сторінку</button>
     </div>
 
@@ -86,7 +50,7 @@
             <p>Підписка: <span id="account-subscription"></span></p>
             <p>Термін дії: <span id="account-expires"></span></p>
         </div>
-        <button onclick="logout()" class="bg-red-300 text-red-800 py-3 px-4 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
+        <button onclick="logout()" class="w-64 bg-red-300 text-red-800 py-4 px-6 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
     </div>
 
     <!-- Адмін-панель -->   
@@ -108,7 +72,7 @@
                 <tbody id="admin-users" class="text-gray-700"></tbody>
             </table>
         </div>
-        <button onclick="logout()" class="bg-red-300 text-red-800 py-3 px-4 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
+        <button onclick="logout()" class="w-64 bg-red-300 text-red-800 py-4 px-6 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
     </div>
 
     <!-- Повідомлення -->
@@ -116,15 +80,19 @@
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg" id="notification-message">Акаунт успішно створено</div>
     </div>
 
-  
-
     <!-- Модал для введення OTP -->
     <div id="2fa-verify-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
             <h2 class="text-2xl font-bold mb-4">Введіть код 2FA</h2>
             <input id="2fa-otp-input" type="text" maxlength="6" placeholder="6-значний код" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300 mb-4">
-            <button onclick="verify2FA()" class="bg-blue-300 text-blue-800 py-2 px-4 rounded-xl hover:bg-blue-400 transition duration-300">Підтвердити</button>
+            <button onclick="verify2FA()" class="w-64 bg-blue-300 text-blue-800 py-4 px-6 rounded-xl hover:bg-blue-400 transition duration-300">Підтвердити</button>
         </div>
+    </div>
+
+    <!-- Футер -->
+    <div class="fixed bottom-4 right-4 bg-white p-4 rounded-xl shadow-lg text-gray-700 text-sm max-w-xs">
+        <p>проект "АРМ-сервер" версія №1 від 17.12.2025</p>
+        <p>Все, що потрібно сучасному нотаріусу — в одному сервісі</p>
     </div>
 
     <script>
@@ -438,3 +406,4 @@
     </script>
 </body>
 </html>
+```
