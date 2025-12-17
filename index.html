@@ -7,14 +7,17 @@
     <link href="/static/output_ost.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gradient-to-b from-blue-100 to-pink-100 min-h-screen flex items-center justify-center font-sans relative">
+<body class="bg-gradient-to-b from-blue-100 to-pink-100 min-h-screen flex items-center justify-center font-sans relative pb-20">
     <!-- Головна сторінка -->
-    <div id="main-page" class="flex flex-col items-center space-y-6">
-        <h1 class="text-5xl font-bold text-blue-800">РОБОЧЕ МІСЦЕ НОТАРІУСА</h1>
-        <button onclick="showRegister()" class="w-64 bg-blue-300 text-blue-800 py-4 px-6 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300">Реєстрація</button>
-        <button onclick="showLogin()" class="w-64 bg-pink-300 text-pink-800 py-4 px-6 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300">Вхід</button>
-        <button onclick="window.open('https://t.me/yo_myr')" class="w-64 bg-green-300 text-green-800 py-4 px-6 rounded-xl shadow-lg hover:bg-green-400 hover:scale-105 transition duration-300">Зв'язатися з автором проекту</button>
-        <button onclick="window.open('https://calc-49ke.onrender.com')" class="w-64 bg-purple-300 text-purple-800 py-4 px-6 rounded-xl shadow-lg hover:bg-purple-400 hover:scale-105 transition duration-300">Онлайн калькулятор вартості нотаріальних послуг</button>
+    <div id="main-page" class="flex flex-col items-center space-y-6 w-full px-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-blue-800 text-center">РОБОЧЕ МІСЦЕ НОТАРІУСА</h1>
+        <div class="flex flex-col items-center space-y-4 w-full max-w-sm">
+            <button onclick="showRegister()" class="w-full bg-blue-300 text-blue-800 py-5 px-8 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300 text-lg font-medium">Реєстрація</button>
+            <button onclick="showLogin()" class="w-full bg-pink-300 text-pink-800 py-5 px-8 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300 text-lg font-medium">Вхід</button>
+            <button onclick="window.open('https://t.me/yo_myr')" class="w-full bg-green-300 text-green-800 py-5 px-8 rounded-xl shadow-lg hover:bg-green-400 hover:scale-105 transition duration-300 text-lg font-medium">Зв'язатися з автором проекту</button>
+            <button onclick="window.open('https://calc-49ke.onrender.com')" class="w-full bg-purple-300 text-purple-800 py-5 px-8 rounded-xl shadow-lg hover:bg-purple-400 hover:scale-105 transition duration-300 text-lg font-medium">Онлайн калькулятор вартості нотаріальних послуг</button>
+            <button onclick="window.open('https://t.me/EKRAN_RMN')" class="w-full bg-indigo-300 text-indigo-800 py-5 px-8 rounded-xl shadow-lg hover:bg-indigo-400 hover:scale-105 transition duration-300 text-lg font-medium">Канал з програмами в телеграмі</button>
+        </div>
     </div>
 
     <!-- Реєстрація -->
@@ -25,7 +28,7 @@
             <input id="reg-password" type="password" placeholder="Пароль" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
             <input id="reg-confirm-password" type="password" placeholder="Підтвердити пароль" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
         </div>
-        <button onclick="register()" class="w-64 bg-blue-300 text-blue-800 py-4 px-6 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300">Зареєструватися</button>
+        <button onclick="register()" class="w-full max-w-xs bg-blue-300 text-blue-800 py-5 px-8 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300 text-lg font-medium">Зареєструватися</button>
         <button onclick="showMain()" class="text-blue-600 hover:underline">Повернутися на початкову сторінку</button>
     </div>
 
@@ -36,7 +39,7 @@
             <input id="login-login" type="text" placeholder="Логін" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
             <input id="login-password" type="password" placeholder="Пароль" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
         </div>
-        <button onclick="login()" class="w-64 bg-pink-300 text-pink-800 py-4 px-6 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300">Увійти</button>
+        <button onclick="login()" class="w-full max-w-xs bg-pink-300 text-pink-800 py-5 px-8 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300 text-lg font-medium">Увійти</button>
         <button onclick="showMain()" class="text-pink-600 hover:underline">Повернутися на початкову сторінку</button>
     </div>
 
@@ -49,7 +52,7 @@
             <p>Підписка: <span id="account-subscription"></span></p>
             <p>Термін дії: <span id="account-expires"></span></p>
         </div>
-        <button onclick="logout()" class="w-64 bg-red-300 text-red-800 py-4 px-6 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
+        <button onclick="logout()" class="w-full max-w-xs bg-red-300 text-red-800 py-5 px-8 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300 text-lg font-medium">Вийти</button>
     </div>
 
     <!-- Адмін-панель -->   
@@ -71,7 +74,7 @@
                 <tbody id="admin-users" class="text-gray-700"></tbody>
             </table>
         </div>
-        <button onclick="logout()" class="w-64 bg-red-300 text-red-800 py-4 px-6 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300">Вийти</button>
+        <button onclick="logout()" class="w-full max-w-xs bg-red-300 text-red-800 py-5 px-8 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300 text-lg font-medium">Вийти</button>
     </div>
 
     <!-- Повідомлення -->
@@ -84,14 +87,13 @@
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
             <h2 class="text-2xl font-bold mb-4">Введіть код 2FA</h2>
             <input id="2fa-otp-input" type="text" maxlength="6" placeholder="6-значний код" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300 mb-4">
-            <button onclick="verify2FA()" class="w-64 bg-blue-300 text-blue-800 py-4 px-6 rounded-xl hover:bg-blue-400 transition duration-300">Підтвердити</button>
+            <button onclick="verify2FA()" class="w-full max-w-xs bg-blue-300 text-blue-800 py-5 px-8 rounded-xl hover:bg-blue-400 transition duration-300 text-lg font-medium">Підтвердити</button>
         </div>
     </div>
 
-    <!-- Футер -->
-    <div class="fixed bottom-4 right-4 bg-white p-4 rounded-xl shadow-lg text-gray-700 text-sm max-w-xs">
-        <p>проект "АРМ-сервер" версія №1 від 17.12.2025</p>
-        <p>Все, що потрібно сучасному нотаріусу — в одному сервісі</p>
+    <!-- Футер — версія (мінімальний, напівпрозорий, непомітний) -->
+    <div class="fixed bottom-3 right-3 text-gray-500 text-xs opacity-60 pointer-events-none">
+        версія №1 від 17.12.2025
     </div>
 
     <script>
