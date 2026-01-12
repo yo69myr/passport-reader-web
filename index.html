@@ -6,6 +6,145 @@
     <title>РОБОЧЕ МІСЦЕ НОТАРІУСА</title>
     <link href="/static/output_ost.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .modal-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e40af;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 32px;
+            color: #6b7280;
+            cursor: pointer;
+            line-height: 1;
+            padding: 5px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+        
+        .close-btn:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        
+        .modal-body {
+            color: #374151;
+            line-height: 1.6;
+        }
+        
+        .modal-section {
+            margin-bottom: 25px;
+        }
+        
+        .modal-section h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        
+        .modal-section p {
+            margin-bottom: 12px;
+        }
+        
+        .modal-section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-section li {
+            margin-bottom: 8px;
+            position: relative;
+            padding-left: 10px;
+        }
+        
+        .modal-section li::before {
+            content: "•";
+            color: #3b82f6;
+            font-weight: bold;
+            display: inline-block;
+            width: 10px;
+            margin-left: -10px;
+        }
+        
+        .version-info {
+            background-color: #f3f4f6;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .contact-info {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .highlight {
+            background-color: #fef3c7;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .modal-content {
+                padding: 20px;
+                border-radius: 15px;
+            }
+            
+            .modal-title {
+                font-size: 24px;
+            }
+            
+            .modal-body {
+                font-size: 15px;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gradient-to-b from-blue-100 to-pink-100 min-h-screen flex items-center justify-center font-sans relative pb-20">
     <!-- Головна сторінка -->
@@ -14,6 +153,7 @@
         <div class="flex flex-col items-center space-y-4 w-full max-w-sm">
             <button onclick="showRegister()" class="w-full bg-blue-300 text-blue-800 py-5 px-8 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300 text-lg font-medium">Реєстрація</button>
             <button onclick="showLogin()" class="w-full bg-pink-300 text-pink-800 py-5 px-8 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300 text-lg font-medium">Вхід</button>
+            <button onclick="showProjectInfo()" class="w-full bg-orange-300 text-orange-800 py-5 px-8 rounded-xl shadow-lg hover:bg-orange-400 hover:scale-105 transition duration-300 text-lg font-medium">ІНФО про проект та інструкція</button>
             <button onclick="window.open('https://t.me/yo_myr')" class="w-full bg-green-300 text-green-800 py-5 px-8 rounded-xl shadow-lg hover:bg-green-400 hover:scale-105 transition duration-300 text-lg font-medium">Зв'язатися з автором проекту</button>
             <button onclick="window.open('https://calc-49ke.onrender.com')" class="w-full bg-purple-300 text-purple-800 py-5 px-8 rounded-xl shadow-lg hover:bg-purple-400 hover:scale-105 transition duration-300 text-lg font-medium">Онлайн калькулятор вартості нотаріальних послуг</button>
             <button onclick="window.open('https://t.me/EKRAN_RMN')" class="w-full bg-indigo-300 text-indigo-800 py-5 px-8 rounded-xl shadow-lg hover:bg-indigo-400 hover:scale-105 transition duration-300 text-lg font-medium">Канал з програмами в телеграмі</button>
@@ -77,6 +217,46 @@
         <button onclick="logout()" class="w-full max-w-xs bg-red-300 text-red-800 py-5 px-8 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300 text-lg font-medium">Вийти</button>
     </div>
 
+    <!-- Модальне вікно інформації про проект -->
+    <div id="project-info-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">ІНФО про проект та інструкція</h2>
+                <button class="close-btn" onclick="hideProjectInfo()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <p><strong>Сайт passport-reader-web.onrender.com</strong> - це сайт для реєстрації акаунтів в моїй системі РМН (робоче місце нотаріуса)</p>
+                    <p>Після того як Ви реєструєте акаунт - на сервер попадають дані котрі Ви ввели: ваш логін, пароль в зашифрованому вигляді та дата створення акаунту.</p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Під час реєстрації акаунтів:</h3>
+                    <ul>
+                        <li>використовуйте полегшені логіни/паролі</li>
+                        <li>немає обмеження щодо логінів / паролів, один символ - також може бути логіном або паролем</li>
+                        <li>не використовуйте логіни/паролі від державних реєстрів</li>
+                    </ul>
+                </div>
+                
+                <div class="version-info">
+                    <h3>проект - Сайт РМН</h3>
+                    <p><strong>версія №1 від 12.01.2026</strong></p>
+                    <p>Сайт не збирає жодної інформації (окрім переліченої вище), ніяких кукі.</p>
+                    <p>Всі проекти повністю створені помічником нотаріуса для облегшення деяких аспектів роботи в нотаріаті.</p>
+                </div>
+                
+                <div class="contact-info">
+                    <p><strong>Пишіть будь ласка в особисті щодо будь-яких питань та пропозицій щодо створення/покращення програм для нотаріусів.</strong></p>
+                    <p><strong>Приймаю запити на реалізацію автоматизації та рекомендацій щодо покращення вашого робочого процесу як нотаріуса.</strong></p>
+                    <p style="font-size: 18px; color: #1e40af; margin-top: 20px; text-align: center;">
+                        <strong>Бажаю гарного здоров'я та миру!</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Повідомлення -->
     <div id="notification" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg" id="notification-message">Акаунт успішно створено</div>
@@ -91,9 +271,16 @@
         </div>
     </div>
 
-    <!-- Футер — версія (мінімальний, напівпрозорий, непомітний) -->
-    <div class="fixed bottom-3 right-3 text-gray-500 text-xs opacity-60 pointer-events-none">
-        версія №1 від 17.12.2025
+    <!-- Модал для налаштування 2FA (якщо потрібен) -->
+    <div id="2fa-setup-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
+            <h2 class="text-2xl font-bold mb-4">Налаштуйте 2FA</h2>
+            <p class="mb-4">Відскануйте QR-код у додатку аутентифікації (наприклад, Google Authenticator):</p>
+            <img id="2fa-qr-image" src="" alt="QR код для 2FA" class="mb-4">
+            <p class="mb-2">Або введіть код вручну:</p>
+            <p id="2fa-secret" class="font-mono bg-gray-100 p-2 rounded mb-4"></p>
+            <button onclick="proceedToVerify()" class="w-full max-w-xs bg-blue-300 text-blue-800 py-5 px-8 rounded-xl hover:bg-blue-400 transition duration-300 text-lg font-medium">Продовжити</button>
+        </div>
     </div>
 
     <script>
@@ -104,16 +291,27 @@
         function showMain() {
             document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
             document.getElementById('main-page').classList.remove('hidden');
+            hideProjectInfo();
         }
 
         function showRegister() {
             document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
             document.getElementById('register-page').classList.remove('hidden');
+            hideProjectInfo();
         }
 
         function showLogin() {
             document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
             document.getElementById('login-page').classList.remove('hidden');
+            hideProjectInfo();
+        }
+
+        function showProjectInfo() {
+            document.getElementById('project-info-modal').classList.remove('hidden');
+        }
+
+        function hideProjectInfo() {
+            document.getElementById('project-info-modal').classList.add('hidden');
         }
 
         function showAccount(login, created_at, subscription_active, subscription_expires) {
@@ -130,64 +328,64 @@
         }
 
         function showAdmin(users) {
-    document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
-    document.getElementById('admin-page').classList.remove('hidden');
-    const tbody = document.getElementById('admin-users');
-    tbody.innerHTML = '';
-    
-    //сортуємо користувачів, нові зверху 
-    const sortedUsers = users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    
-    sortedUsers.forEach((user, index) => {
-        const tr = document.createElement('tr');
-        
-        // а підписочка активна , а ?? а підписочка активна ??? а , скажи будь ласка ,, ааа ???    //  Copyright © 2025 Fully created by [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.
-        let subscriptionStatus = 'Неактивна';
-        let statusClass = 'text-red-600';
-        
-        if (user.subscription_active) {
-            if (user.subscription_type === 'unlimited' || !user.subscription_expires) {
-                subscriptionStatus = 'Активна (безстроково)';
-            } else {
-                subscriptionStatus = `Активна до ${user.subscription_expires}`;
-            }
-            statusClass = 'text-green-600 font-semibold';
+            document.querySelectorAll('div[id$="-page"]').forEach(div => div.classList.add('hidden'));
+            document.getElementById('admin-page').classList.remove('hidden');
+            const tbody = document.getElementById('admin-users');
+            tbody.innerHTML = '';
+            
+            //сортуємо користувачів, нові зверху 
+            const sortedUsers = users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            sortedUsers.forEach((user, index) => {
+                const tr = document.createElement('tr');
+                
+                // а підписочка активна , а ?? а підписочка активна ??? а , скажи будь ласка ,, ааа ???    //  Copyright © 2025 Fully created by [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.
+                let subscriptionStatus = 'Неактивна';
+                let statusClass = 'text-red-600';
+                
+                if (user.subscription_active) {
+                    if (user.subscription_type === 'unlimited' || !user.subscription_expires) {
+                        subscriptionStatus = 'Активна (безстроково)';
+                    } else {
+                        subscriptionStatus = `Активна до ${user.subscription_expires}`;
+                    }
+                    statusClass = 'text-green-600 font-semibold';
+                }
+                
+                tr.innerHTML = `
+                    <td class="p-4 border-b">${index + 1}</td>
+                    <td class="p-4 border-b font-semibold">${user.login}</td>
+                    <td class="p-4 border-b">${user.created_at}</td>
+                    <td class="p-4 border-b break-all text-xs">${user.password_hash}</td>
+                    <td class="p-4 border-b ${statusClass}">${subscriptionStatus}</td>
+                    <td class="p-4 border-b">${user.subscription_expires || '-'}</td>
+                    <td class="p-4 border-b">
+                        <div class="flex flex-col space-y-1">
+                            <div class="grid grid-cols-3 gap-1">
+                                <button onclick="setSubscription('${user.login}', 1)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">1 год</button>
+                                <button onclick="setSubscription('${user.login}', 3)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 год</button>
+                                <button onclick="setSubscription('${user.login}', 6)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">6 год</button>
+                                <button onclick="setSubscription('${user.login}', 12)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">12 год</button>
+                                <button onclick="setSubscription('${user.login}', 24)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">24 год</button>
+                                <button onclick="setSubscription('${user.login}', 72)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 дні</button>
+                                <button onclick="setSubscription('${user.login}', 360)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">15 дн</button>
+                                <button onclick="setSubscription('${user.login}', 720)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">30 дн</button>
+                                <button onclick="setSubscription('${user.login}', 1440)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">60 дн</button>
+                                <button onclick="setSubscription('${user.login}', 2160)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">90 дн</button>
+                                <button onclick="setSubscription('${user.login}', 2880)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">120 д</button>
+                                <button onclick="setSubscription('${user.login}', 3600)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">150 д</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-1">
+                                <button onclick="setSubscription('${user.login}', 0)" class="bg-blue-200 hover:bg-blue-300 text-blue-800 py-1 px-1 rounded text-xs transition duration-300">Безстроково</button>
+                                <button onclick="deactivateSubscription('${user.login}')" class="bg-red-200 hover:bg-red-300 text-red-800 py-1 px-1 rounded text-xs transition duration-300">Вимкнути</button>
+                            </div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
-        
-        tr.innerHTML = `
-            <td class="p-4 border-b">${index + 1}</td>
-            <td class="p-4 border-b font-semibold">${user.login}</td>
-            <td class="p-4 border-b">${user.created_at}</td>
-            <td class="p-4 border-b break-all text-xs">${user.password_hash}</td>
-            <td class="p-4 border-b ${statusClass}">${subscriptionStatus}</td>
-            <td class="p-4 border-b">${user.subscription_expires || '-'}</td>
-            <td class="p-4 border-b">
-                <div class="flex flex-col space-y-1">
-                    <div class="grid grid-cols-3 gap-1">
-                        <button onclick="setSubscription('${user.login}', 1)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">1 год</button>
-                        <button onclick="setSubscription('${user.login}', 3)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 год</button>
-                        <button onclick="setSubscription('${user.login}', 6)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">6 год</button>
-                        <button onclick="setSubscription('${user.login}', 12)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">12 год</button>
-                        <button onclick="setSubscription('${user.login}', 24)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">24 год</button>
-                        <button onclick="setSubscription('${user.login}', 72)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">3 дні</button>
-                        <button onclick="setSubscription('${user.login}', 360)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">15 дн</button>
-                        <button onclick="setSubscription('${user.login}', 720)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">30 дн</button>
-                        <button onclick="setSubscription('${user.login}', 1440)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">60 дн</button>
-                        <button onclick="setSubscription('${user.login}', 2160)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">90 дн</button>
-                        <button onclick="setSubscription('${user.login}', 2880)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">120 д</button>
-                        <button onclick="setSubscription('${user.login}', 3600)" class="bg-green-200 hover:bg-green-300 text-green-800 py-1 px-1 rounded text-xs transition duration-300">150 д</button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-1">
-                        <button onclick="setSubscription('${user.login}', 0)" class="bg-blue-200 hover:bg-blue-300 text-blue-800 py-1 px-1 rounded text-xs transition duration-300">Безстроково</button>
-                        <button onclick="deactivateSubscription('${user.login}')" class="bg-red-200 hover:bg-red-300 text-red-800 py-1 px-1 rounded text-xs transition duration-300">Вимкнути</button>
-                    </div>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-//  Copyright © 2025 Fully created by [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.
+        //  Copyright © 2025 Fully created by [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.
         async function register() {
             const login = document.getElementById('reg-login').value;
             const password = document.getElementById('reg-password').value;
@@ -253,8 +451,8 @@
             } else {
                 alert(data.message);
             }
-        }
-
+        } 
+//  Copyright © 2025 Fully created by [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.
         async function setup2FA() {
             const response = await fetch(`${API_URL}/setup_2fa`, {
                 method: 'POST',
@@ -404,7 +602,20 @@
             currentAdminPassword = null;
             showMain();
         }
+
+        // Закриття модального вікна при кліку на тло
+        document.getElementById('project-info-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideProjectInfo();
+            }
+        });
+        
+        // Закриття модального вікна клавішею ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideProjectInfo();
+            }
+        });
     </script>
 </body>
 </html>
-
