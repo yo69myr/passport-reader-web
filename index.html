@@ -274,17 +274,6 @@
         </div>
     </div>
 
-    <!-- Модал для налаштування 2FA (якщо потрібен) -->
-    <div id="2fa-setup-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-        <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
-            <h2 class="text-2xl font-bold mb-4">Налаштуйте 2FA</h2>
-            <p class="mb-4">Відскануйте QR-код у додатку аутентифікації (наприклад, Google Authenticator):</p>
-            <img id="2fa-qr-image" src="" alt="QR код для 2FA" class="mb-4">
-            <p class="mb-2">Або введіть код вручну:</p>
-            <p id="2fa-secret" class="font-mono bg-gray-100 p-2 rounded mb-4"></p>
-            <button onclick="proceedToVerify()" class="w-full max-w-xs bg-blue-300 text-blue-800 py-5 px-8 rounded-xl hover:bg-blue-400 transition duration-300 text-lg font-medium">Продовжити</button>
-        </div>
-    </div>
 
     <script>
         const API_URL = "https://passport-reader-web.onrender.com/api"; 
