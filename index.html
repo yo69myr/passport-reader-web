@@ -149,7 +149,7 @@
 <body class="bg-gradient-to-b from-blue-100 to-pink-100 min-h-screen flex items-center justify-center font-sans relative pb-20">
     <!-- Головна сторінка -->
     <div id="main-page" class="flex flex-col items-center space-y-6 w-full px-4">
-        <h1 class="text-4xl md:text-5xl font-bold text-blue-800 text-center">РОБОЧЕ МІСЦЕ НОТАРІУСА</h1>
+        <h1 class="text-4xl md:text-5xl font-bold text-blue-800 text-center">РОБОЧЕ МІСЦЕ НОТАРІУСА</h1>   
         <div class="flex flex-col items-center space-y-4 w-full max-w-sm">
             <button onclick="showRegister()" class="w-full bg-blue-300 text-blue-800 py-5 px-8 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300 text-lg font-medium">Реєстрація</button>
             <button onclick="showLogin()" class="w-full bg-pink-300 text-pink-800 py-5 px-8 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300 text-lg font-medium">Вхід</button>
@@ -259,18 +259,19 @@
             </div>
         </div>
     </div>
+                        
 
-    <!-- Повідомлення -->
+    <!-- Повідомлення -->    
     <div id="notification" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg" id="notification-message">Акаунт успішно створено</div>
     </div>
 
-    <!-- Модал для введення OTP -->
+    <!-- Модал  -->
     <div id="2fa-verify-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
-            <h2 class="text-2xl font-bold mb-4">Введіть код 2FA</h2>
+            <h2 class="text-2xl font-bold mb-4">CLAUDE</h2>
             <input id="2fa-otp-input" type="text" maxlength="6" placeholder="6-значний код" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300 mb-4">
-            <button onclick="verify2FA()" class="w-full max-w-xs bg-blue-300 text-blue-800 py-5 px-8 rounded-xl hover:bg-blue-400 transition duration-300 text-lg font-medium">Підтвердити</button>
+            <button onclick="verify2FA()" class="w-full max-w-xs bg-blue-300 text-blue-800 py-5 px-8 rounded-xl hover:bg-blue-400 transition duration-300 text-lg font-medium">OK</button>
         </div>
     </div>
 
@@ -325,13 +326,14 @@
             const tbody = document.getElementById('admin-users');
             tbody.innerHTML = '';
             
-            //сортуємо користувачів, нові зверху 
+            // C 
             const sortedUsers = users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             
             sortedUsers.forEach((user, index) => {
                 const tr = document.createElement('tr');
-                
-                // а підписочка активна , а ?? а підписочка активна ??? а , скажи будь ласка ,, ааа ???    //  Copyright © 2025 Fully created by [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.
+
+                // а підписочка активна , а ?? а підписочка активна ??? а , скажи будь ласка ,, ааа ???  
+                //  Copyright © 2025 Fully created by [DUDKA_ARTEM_ДУДКА_АРТЕМ_3676006734]. All rights reserved.
                 let subscriptionStatus = 'Неактивна';
                 let statusClass = 'text-red-600';
                 
@@ -483,7 +485,7 @@
 
             if (data.status === 'success') {
                 document.getElementById('2fa-verify-modal').classList.add('hidden');
-                // адмінка полеталіа  
+                // С  
                 const adminResponse = await fetch(`${API_URL}/admin/users`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -564,11 +566,11 @@
 
         function getDurationText(hours) {
             if (hours === 0) return 'безстроково';
-            if (hours === 1) return '1 годину';
-            if (hours === 3) return '3 години';
-            if (hours === 6) return '6 годин';
+            if (hours === 24) return '1 день';
+            if (hours === 168) return '7 днів';
+            if (hours === 720) return '30 днів';
             if (hours === 12) return '12 годин';
-            if (hours === 24) return '24 години';
+            if (hours === 240) return '10 днів';
             if (hours === 72) return '3 дні';
             if (hours === 360) return '15 днів';
             if (hours === 720) return '30 днів';
