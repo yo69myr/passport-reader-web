@@ -152,7 +152,7 @@
         <h1 class="text-4xl md:text-5xl font-bold text-blue-800 text-center">РОБОЧЕ МІСЦЕ НОТАРІУСА</h1>   
         <div class="flex flex-col items-center space-y-4 w-full max-w-sm">
             <button onclick="showRegister()" class="w-full bg-blue-300 text-blue-800 py-5 px-8 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300 text-lg font-medium">Реєстрація</button>
-            <button onclick="showLogin()" class="w-full bg-pink-300 text-pink-800 py-5 px-8 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300 text-lg font-medium">Вхід</button>
+            <button onclick="showLogin()" class="w-full bg-pink-300 text-pink-800 py-5 px-8 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300 text-lg font-medium">Перевірка статусу підписки</button>
             <button onclick="showProjectInfo()" class="w-full bg-orange-300 text-orange-800 py-5 px-8 rounded-xl shadow-lg hover:bg-orange-400 hover:scale-105 transition duration-300 text-lg font-medium">ІНФО про проект та інструкція</button>
             <button onclick="window.open('https://t.me/yo_myr')" class="w-full bg-green-300 text-green-800 py-5 px-8 rounded-xl shadow-lg hover:bg-green-400 hover:scale-105 transition duration-300 text-lg font-medium">Зв'язатися з автором проекту</button>
             <button onclick="window.open('https://calc-49ke.onrender.com')" class="w-full bg-purple-300 text-purple-800 py-5 px-8 rounded-xl shadow-lg hover:bg-purple-400 hover:scale-105 transition duration-300 text-lg font-medium">Онлайн калькулятор вартості нотаріальних послуг</button>
@@ -172,9 +172,9 @@
         <button onclick="showMain()" class="text-blue-600 hover:underline">Повернутися на початкову сторінку</button>
     </div>
 
-    <!-- Вхід -->
+    <!-- Перевірка статусу підписки -->
     <div id="login-page" class="hidden flex flex-col items-center space-y-6 max-w-md w-full p-8 bg-pink-200 rounded-3xl shadow-xl">
-        <h2 class="text-4xl font-bold text-pink-800">Вхід</h2>
+        <h2 class="text-4xl font-bold text-pink-800">Перевірка статусу підписки</h2>
         <div class="w-full space-y-4">
             <input id="login-login" type="text" placeholder="Логін" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
             <input id="login-password" type="password" placeholder="Пароль" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300">
@@ -226,11 +226,10 @@
             </div>
             <div class="modal-body">
                 <div class="modal-section">
-                    <p><strong>Сайт passport-reader-web.onrender.com</strong> - це сайт для реєстрації акаунтів в моїй системі РМН (робоче місце нотаріуса)</p>
+                    <p><strong>Сайт passport-reader-web.onrender.com</strong> - це сайт для реєстрації акаунтів в моїй системі РМН (робоче місце нотаріуса).</p>
                     <p>Ви можете створити на цьому сайті акаунт, який буде використвуватися виключно для авторизації в моїх програмах та на сайті онлайн калькулятора.</p>
                     <p>Після того як Ви реєструєте акаунт - на сервер попадають дані, котрі Ви ввели: ваш логін, пароль в зашифрованому вигляді та дата створення акаунту.</p>
-                    <p>Після реєстрації ваш акаунт автоматично активовується в системі і Ви можете користуватися .</p>
-                    <p>Після реєстрації автоматично активується підписка на ваш акаунт.</p>
+                    <p>Після реєстрації автоматично активується підписка на ваш акаунт і Ви відразу можете натиснути на кнопку "Онлайн калькулятор..." та користуватися ним.</p>
                 </div>
                 
                 <div class="modal-section">
@@ -270,7 +269,7 @@
     <div id="2fa-verify-modal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
         <div class="bg-white p-6 rounded-xl shadow-lg text-gray-700 text-lg flex flex-col items-center">
             <h2 class="text-2xl font-bold mb-4">CLAUDE</h2>
-            <input id="2fa-otp-input" type="text" maxlength="6" placeholder="6-значний код" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300 mb-4">
+            <input id="2fa-otp-input" type="text" maxlength="6" placeholder="вікно" class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-300 mb-4">
             <button onclick="verify2FA()" class="w-full max-w-xs bg-blue-300 text-blue-800 py-5 px-8 rounded-xl hover:bg-blue-400 transition duration-300 text-lg font-medium">OK</button>
         </div>
     </div>
