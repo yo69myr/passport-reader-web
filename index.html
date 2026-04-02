@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>РОБОЧЕ МІСЦЕ НОТАРІУСА</title>
+    <title>АВТОМАТИЗОВАНЕ РОБОЧЕ МІСЦЕ НОТАРІУСА</title>
     <link href="/static/output_ost.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -149,7 +149,10 @@
 <body class="bg-gradient-to-b from-blue-100 to-pink-100 min-h-screen flex items-center justify-center font-sans relative pb-20">
     <!-- Головна сторінка -->
     <div id="main-page" class="flex flex-col items-center space-y-6 w-full px-4">
-        <h1 class="text-4xl md:text-5xl font-bold text-blue-800 text-center">РОБОЧЕ МІСЦЕ НОТАРІУСА</h1>   
+        <h1 class="text-4xl md:text-5xl font-bold text-blue-800 text-center leading-tight">
+            АВТОМАТИЗОВАНЕ<br>
+            РОБОЧЕ МІСЦЕ НОТАРІУСА
+        </h1>   
         <div class="flex flex-col items-center space-y-4 w-full max-w-sm">
             <button onclick="showRegister()" class="w-full bg-blue-300 text-blue-800 py-5 px-8 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300 text-lg font-medium">Реєстрація</button>
             <button onclick="showLogin()" class="w-full bg-pink-300 text-pink-800 py-5 px-8 rounded-xl shadow-lg hover:bg-pink-400 hover:scale-105 transition duration-300 text-lg font-medium">Перевірка статусу підписки</button>
@@ -170,6 +173,22 @@
         </div>
         <button onclick="register()" class="w-full max-w-xs bg-blue-300 text-blue-800 py-5 px-8 rounded-xl shadow-lg hover:bg-blue-400 hover:scale-105 transition duration-300 text-lg font-medium">Зареєструватися</button>
         <button onclick="showMain()" class="text-blue-600 hover:underline">Повернутися на початкову сторінку</button>
+        
+        <!-- Додатковий текст під кнопкою повернення -->
+        <div class="mt-6 text-left text-gray-700 text-sm md:text-base space-y-3 border-t border-blue-300 pt-5">
+            <p class="font-medium text-blue-900">Це сайт для реєстрації акаунтів в системі АРМН - автоматизоване робоче місце нотаріуса.</p>
+            <p>Ви можете створити на цьому сайті акаунт, який буде використовуватися виключно для авторизації в моїх програмах та на сайті онлайн калькулятора.</p>
+            <div>
+                <p class="font-medium text-blue-800">Під час реєстрації акаунтів:</p>
+                <ul class="list-disc list-inside ml-2 space-y-1 mt-1">
+                    <li>використовуйте полегшені логіни/паролі</li>
+                    <li>немає обмеження щодо логінів / паролів, один символ - також може бути логіном або паролем</li>
+                    <li>не використовуйте логіни/паролі від державних реєстрів</li>
+                </ul>
+            </div>
+            <p>Після реєстрації автоматично активується підписка на ваш акаунт, і Ви відразу можете користуватися програмами та онлайн калькулятором.</p>
+            <p>Перевірити наявність активної підписки можливо через кнопку «Перевірити статус підписки».</p>
+        </div>
     </div>
 
     <!-- Перевірка статусу підписки -->
@@ -226,7 +245,7 @@
             </div>
             <div class="modal-body">
                 <div class="modal-section">
-                    <p><strong>Сайт passport-reader-web.onrender.com</strong> - це сайт для реєстрації акаунтів в моїй системі РМН (робоче місце нотаріуса).</p>
+                    <p><strong>Сайт passport-reader-web.onrender.com</strong> - це сайт для реєстрації акаунтів в моїй системі АРМН (автоматизоване робоче місце нотаріуса).</p>
                     <p>Ви можете створити на цьому сайті акаунт, який буде використвуватися виключно для авторизації в моїх програмах та на сайті онлайн калькулятора.</p>
                     <p>Після реєстрації автоматично активується підписка на ваш акаунт і Ви відразу можете натиснути на кнопку "Онлайн калькулятор вартості нотаріальних послуг" та користуватися ним.</p>
                 </div>
@@ -241,8 +260,8 @@
                 </div>
                 
                 <div class="version-info">
-                    <h3>проект - Сайт РМН</h3>
-                    <p><strong>версія №1 від 12.01.2026</strong></p>
+                    <h3>проект - Сайт АРМН</h3>
+                    <p><strong>версія №1 від 02.04.2026</strong></p>
                     <p>Після того як Ви реєструєте акаунт - на сервер попадають дані, котрі Ви ввели: ваш логін, пароль в зашифрованому вигляді та дата створення акаунту.</p>
                     <p>Сайт не збирає жодної інформації (окрім переліченої вище), ніяких кукі.</p>
                     <p>Всі проекти повністю створені помічником нотаріуса для облегшення деяких аспектів роботи в нотаріаті.</p>
