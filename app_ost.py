@@ -152,13 +152,6 @@ def register():
     conn.close()
     return jsonify({"status": "success", "message": "Реєстрація успішна. Вам надано пробну підписку на 3 дні!"})
 
-    password_hash = generate_password_hash(password)
-    created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute("INSERT INTO users (login, password_hash, subscription_active, subscription_expires, device_id, created_at, session_active, session_token, is_admin) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                   (login, password_hash, False, None, None, created_at, False, None, False))
-    conn.commit()
-    conn.close()
-    return jsonify({"status": "success"})
 
 @app.route("/api/login", methods=["POST"])
 def login():
@@ -394,6 +387,33 @@ def update_subscription():
         conn.commit()
         conn.close()
         return jsonify({"status": "success"})
+    conn.close()
+    return jsonify({"status": "error", "message": "Невірні адмін-дані"}), 401
+
+@app.route("/api/admin/bulk_subscription", methods=["POST"])
+def bulk_subscription():
+    data = request.get_json()
+    login = data.get("login")
+    password = data.get("password")
+    action = data.get("action")  # "enable_all_unlimited" або "disable_all"
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash, is_admin FROM users WHERE login = %s", (login,))
+    user = cursor.fetchone()
+
+    if user and check_password_hash(user[0], password) and user[1]:
+        if action == "enable_all_unlimited":
+            cursor.execute("UPDATE users SET subscription_active = TRUE, subscription_expires = NULL")
+        elif action == "disable_all":
+            cursor.execute("UPDATE users SET subscription_active = FALSE, subscription_expires = NULL")
+        else:
+            conn.close()
+            return jsonify({"status": "error", "message": "Невідома дія"}), 400
+
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "message": f"Дія '{action}' виконана для всіх користувачів"})
     conn.close()
     return jsonify({"status": "error", "message": "Невірні адмін-дані"}), 401
 
