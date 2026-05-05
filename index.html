@@ -160,6 +160,7 @@
             <button onclick="window.open('https://t.me/yo_myr')" class="w-full bg-green-300 text-green-800 py-5 px-8 rounded-xl shadow-lg hover:bg-green-400 hover:scale-105 transition duration-300 text-lg font-medium">Зв'язатися з автором проекту</button>
             <button onclick="window.open('https://calc-49ke.onrender.com')" class="w-full bg-purple-300 text-purple-800 py-5 px-8 rounded-xl shadow-lg hover:bg-purple-400 hover:scale-105 transition duration-300 text-lg font-medium">Онлайн калькулятор вартості нотаріальних послуг</button>
             <button onclick="window.open('https://t.me/EKRAN_RMN')" class="w-full bg-indigo-300 text-indigo-800 py-5 px-8 rounded-xl shadow-lg hover:bg-indigo-400 hover:scale-105 transition duration-300 text-lg font-medium">Канал з програмами в телеграмі</button>
+            <button onclick="window.open('https://0975085679.site')" class="w-full bg-teal-300 text-teal-800 py-5 px-8 rounded-xl shadow-lg hover:bg-teal-400 hover:scale-105 transition duration-300 text-lg font-medium">Сайт-портфоліо</button>
         </div>
     </div>
 
@@ -214,10 +215,17 @@
         <button onclick="logout()" class="w-full max-w-xs bg-red-300 text-red-800 py-5 px-8 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300 text-lg font-medium">Вийти</button>
     </div>
 
-    <!-- Адмін-панель -->   
-    <div id="admin-page" class="hidden flex flex-col items-center space-y-6 w-full p-8 bg-blue-200 rounded-3xl shadow-xl mx-4 max-w-7xl">
-        <h2 class="text-4xl font-bold text-blue-800">Адміністративна панель</h2>
-        <div class="w-full overflow-x-auto max-h-96 overflow-y-auto">
+    <!-- Адмін-панель (розтягнута на весь екран) -->   
+    <div id="admin-page" class="hidden flex flex-col w-full min-h-screen bg-blue-200 p-4 md:p-8">
+        <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+            <h2 class="text-4xl font-bold text-blue-800">Адміністративна панель</h2>
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="bulkEnableUnlimited()" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition text-sm md:text-base">Увімкнути всі підписки безстроково</button>
+                <button onclick="bulkDisableAll()" class="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 transition text-sm md:text-base">Вимкнути всі підписки</button>
+            </div>
+        </div>
+        
+        <div class="w-full flex-1 overflow-auto">
             <table class="w-full border-collapse">
                 <thead class="sticky top-0 bg-blue-300">
                     <tr class="text-blue-800">
@@ -233,7 +241,10 @@
                 <tbody id="admin-users" class="text-gray-700"></tbody>
             </table>
         </div>
-        <button onclick="logout()" class="w-full max-w-xs bg-red-300 text-red-800 py-5 px-8 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300 text-lg font-medium">Вийти</button>
+        
+        <div class="mt-4 flex justify-center">
+            <button onclick="logout()" class="max-w-xs bg-red-300 text-red-800 py-5 px-8 rounded-xl shadow-lg hover:bg-red-400 hover:scale-105 transition duration-300 text-lg font-medium">Вийти</button>
+        </div>
     </div>
 
     <!-- Модальне вікно інформації про проект -->
@@ -474,17 +485,11 @@
             const data = await response.json();
 
             if (data.status === 'success') {
-                document.getElementById('2fa-qr-image').src = `data:image/png;base64,${data.qr_image}`;
-                document.getElementById('2fa-secret').textContent = data.secret;
-                document.getElementById('2fa-setup-modal').classList.remove('hidden');
+                // Якщо є модалка з qr-кодом, можна її показати, але зараз просто переходимо до верифікації
+                show2FAVerifyModal();
             } else {
                 alert(data.message);
             }
-        }
-
-        function proceedToVerify() {
-            document.getElementById('2fa-setup-modal').classList.add('hidden');
-            show2FAVerifyModal();
         }
 
         function show2FAVerifyModal() {
@@ -503,7 +508,7 @@
 
             if (data.status === 'success') {
                 document.getElementById('2fa-verify-modal').classList.add('hidden');
-                // С  
+                // Завантаження адмін-панелі
                 const adminResponse = await fetch(`${API_URL}/admin/users`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -582,6 +587,63 @@
             }
         }
 
+        async function bulkEnableUnlimited() {
+            if (!confirm('Ви впевнені, що хочете увімкнути безстрокову підписку для ВСІХ користувачів?')) return;
+            const response = await fetch(`${API_URL}/admin/bulk_subscription`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    login: currentAdminLogin, 
+                    password: currentAdminPassword, 
+                    action: 'enable_all_unlimited' 
+                })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                showNotification('Всі підписки увімкнено безстроково');
+                // Оновлюємо таблицю
+                const adminResponse = await fetch(`${API_URL}/admin/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login: currentAdminLogin, password: currentAdminPassword })
+                });
+                const adminData = await adminResponse.json();
+                if (adminData.status === 'success') {
+                    showAdmin(adminData.users);
+                }
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function bulkDisableAll() {
+            if (!confirm('Ви впевнені, що хочете вимкнути підписки для ВСІХ користувачів?')) return;
+            const response = await fetch(`${API_URL}/admin/bulk_subscription`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    login: currentAdminLogin, 
+                    password: currentAdminPassword, 
+                    action: 'disable_all' 
+                })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                showNotification('Всі підписки вимкнено');
+                const adminResponse = await fetch(`${API_URL}/admin/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login: currentAdminLogin, password: currentAdminPassword })
+                });
+                const adminData = await adminResponse.json();
+                if (adminData.status === 'success') {
+                    showAdmin(adminData.users);
+                }
+            } else {
+                alert(data.message);
+            }
+        }
+
         function getDurationText(hours) {
             if (hours === 0) return 'безстроково';
             if (hours === 24) return '1 день';
@@ -591,7 +653,6 @@
             if (hours === 240) return '10 днів';
             if (hours === 72) return '3 дні';
             if (hours === 360) return '15 днів';
-            if (hours === 720) return '30 днів';
             if (hours === 1440) return '60 днів';
             if (hours === 2160) return '90 днів';
             if (hours === 2880) return '120 днів';
